@@ -4,7 +4,7 @@ This is an re-implementation of the Microsoft Tensor Query Processing platform, 
 A large part of the original code volume is for out-of-memory processing. This fork removes the out-of-memory processing part to support only in-memory workloads as an experimental baseline.
 
 The structure of the repo is approximately:
-
+```
 TQP-Vortex
     ├── cmake          : CMake files for building custom modules
     ├── experiments    : Graph plotting, micro-benchmarks        
@@ -18,7 +18,7 @@ TQP-Vortex
     ├── Vortex         : External module that experiments with multi-PCIE speedups with multi-GPUs
     ├── parsing.py     : Invokes Spark's query plan generator and then parses queries into a format that our system can run
     └── main.py        : Main entrypoint for the system
-
+```
 ## Environment Setup
 Choose your favorite python environment manager - we use Conda as an example.
 
