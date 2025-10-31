@@ -1,0 +1,306 @@
+== Physical Plan ==
+AdaptiveSparkPlan (51)
++- TakeOrderedAndProject (50)
+   +- Project (49)
+      +- BroadcastHashJoin Inner BuildRight (48)
+         :- Project (43)
+         :  +- BroadcastHashJoin Inner BuildRight (42)
+         :     :- Project (38)
+         :     :  +- BroadcastHashJoin Inner BuildRight (37)
+         :     :     :- Project (33)
+         :     :     :  +- BroadcastHashJoin Inner BuildLeft (32)
+         :     :     :     :- BroadcastExchange (9)
+         :     :     :     :  +- Project (8)
+         :     :     :     :     +- BroadcastHashJoin Inner BuildLeft (7)
+         :     :     :     :        :- BroadcastExchange (4)
+         :     :     :     :        :  +- Project (3)
+         :     :     :     :        :     +- Filter (2)
+         :     :     :     :        :        +- Scan parquet  (1)
+         :     :     :     :        +- Filter (6)
+         :     :     :     :           +- Scan parquet  (5)
+         :     :     :     +- Filter (31)
+         :     :     :        +- HashAggregate (30)
+         :     :     :           +- Exchange (29)
+         :     :     :              +- HashAggregate (28)
+         :     :     :                 +- Project (27)
+         :     :     :                    +- BroadcastHashJoin Inner BuildRight (26)
+         :     :     :                       :- Project (21)
+         :     :     :                       :  +- BroadcastHashJoin Inner BuildRight (20)
+         :     :     :                       :     :- Project (16)
+         :     :     :                       :     :  +- BroadcastHashJoin Inner BuildRight (15)
+         :     :     :                       :     :     :- Filter (11)
+         :     :     :                       :     :     :  +- Scan parquet  (10)
+         :     :     :                       :     :     +- BroadcastExchange (14)
+         :     :     :                       :     :        +- Filter (13)
+         :     :     :                       :     :           +- Scan parquet  (12)
+         :     :     :                       :     +- BroadcastExchange (19)
+         :     :     :                       :        +- Filter (18)
+         :     :     :                       :           +- Scan parquet  (17)
+         :     :     :                       +- BroadcastExchange (25)
+         :     :     :                          +- Project (24)
+         :     :     :                             +- Filter (23)
+         :     :     :                                +- Scan parquet  (22)
+         :     :     +- BroadcastExchange (36)
+         :     :        +- Filter (35)
+         :     :           +- Scan parquet  (34)
+         :     +- BroadcastExchange (41)
+         :        +- Filter (40)
+         :           +- Scan parquet  (39)
+         +- BroadcastExchange (47)
+            +- Project (46)
+               +- Filter (45)
+                  +- Scan parquet  (44)
+
+
+(1) Scan parquet 
+Output [4]: [p_partkey#380, p_mfgr#382, p_type#384, p_size#385]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-part]
+PushedFilters: [IsNotNull(p_size), IsNotNull(p_type), EqualTo(p_size,15), StringEndsWith(p_type,BRASS), IsNotNull(p_partkey)]
+ReadSchema: struct<p_partkey:int,p_mfgr:string,p_type:string,p_size:int>
+
+(2) Filter
+Input [4]: [p_partkey#380, p_mfgr#382, p_type#384, p_size#385]
+Condition : ((((isnotnull(p_size#385) AND isnotnull(p_type#384)) AND (p_size#385 = 15)) AND EndsWith(p_type#384, BRASS)) AND isnotnull(p_partkey#380))
+
+(3) Project
+Output [2]: [p_partkey#380, p_mfgr#382]
+Input [4]: [p_partkey#380, p_mfgr#382, p_type#384, p_size#385]
+
+(4) BroadcastExchange
+Input [2]: [p_partkey#380, p_mfgr#382]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=482]
+
+(5) Scan parquet 
+Output [3]: [ps_partkey#448, ps_suppkey#449, ps_supplycost#451]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-partsupp]
+PushedFilters: [IsNotNull(ps_partkey), IsNotNull(ps_supplycost), IsNotNull(ps_suppkey)]
+ReadSchema: struct<ps_partkey:int,ps_suppkey:int,ps_supplycost:double>
+
+(6) Filter
+Input [3]: [ps_partkey#448, ps_suppkey#449, ps_supplycost#451]
+Condition : ((isnotnull(ps_partkey#448) AND isnotnull(ps_supplycost#451)) AND isnotnull(ps_suppkey#449))
+
+(7) BroadcastHashJoin
+Left keys [1]: [p_partkey#380]
+Right keys [1]: [ps_partkey#448]
+Join type: Inner
+Join condition: None
+
+(8) Project
+Output [4]: [p_partkey#380, p_mfgr#382, ps_suppkey#449, ps_supplycost#451]
+Input [5]: [p_partkey#380, p_mfgr#382, ps_partkey#448, ps_suppkey#449, ps_supplycost#451]
+
+(9) BroadcastExchange
+Input [4]: [p_partkey#380, p_mfgr#382, ps_suppkey#449, ps_supplycost#451]
+Arguments: HashedRelationBroadcastMode(List(knownfloatingpointnormalized(normalizenanandzero(input[3, double, true])), input[0, int, true]),false), [plan_id=502]
+
+(10) Scan parquet 
+Output [3]: [ps_partkey#661, ps_suppkey#662, ps_supplycost#664]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-partsupp]
+PushedFilters: [IsNotNull(ps_suppkey), IsNotNull(ps_partkey)]
+ReadSchema: struct<ps_partkey:int,ps_suppkey:int,ps_supplycost:double>
+
+(11) Filter
+Input [3]: [ps_partkey#661, ps_suppkey#662, ps_supplycost#664]
+Condition : (isnotnull(ps_suppkey#662) AND isnotnull(ps_partkey#661))
+
+(12) Scan parquet 
+Output [2]: [s_suppkey#666, s_nationkey#669]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-supplier]
+PushedFilters: [IsNotNull(s_suppkey), IsNotNull(s_nationkey)]
+ReadSchema: struct<s_suppkey:int,s_nationkey:int>
+
+(13) Filter
+Input [2]: [s_suppkey#666, s_nationkey#669]
+Condition : (isnotnull(s_suppkey#666) AND isnotnull(s_nationkey#669))
+
+(14) BroadcastExchange
+Input [2]: [s_suppkey#666, s_nationkey#669]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=485]
+
+(15) BroadcastHashJoin
+Left keys [1]: [ps_suppkey#662]
+Right keys [1]: [s_suppkey#666]
+Join type: Inner
+Join condition: None
+
+(16) Project
+Output [3]: [ps_partkey#661, ps_supplycost#664, s_nationkey#669]
+Input [5]: [ps_partkey#661, ps_suppkey#662, ps_supplycost#664, s_suppkey#666, s_nationkey#669]
+
+(17) Scan parquet 
+Output [2]: [n_nationkey#673, n_regionkey#675]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-nation]
+PushedFilters: [IsNotNull(n_nationkey), IsNotNull(n_regionkey)]
+ReadSchema: struct<n_nationkey:int,n_regionkey:int>
+
+(18) Filter
+Input [2]: [n_nationkey#673, n_regionkey#675]
+Condition : (isnotnull(n_nationkey#673) AND isnotnull(n_regionkey#675))
+
+(19) BroadcastExchange
+Input [2]: [n_nationkey#673, n_regionkey#675]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=489]
+
+(20) BroadcastHashJoin
+Left keys [1]: [s_nationkey#669]
+Right keys [1]: [n_nationkey#673]
+Join type: Inner
+Join condition: None
+
+(21) Project
+Output [3]: [ps_partkey#661, ps_supplycost#664, n_regionkey#675]
+Input [5]: [ps_partkey#661, ps_supplycost#664, s_nationkey#669, n_nationkey#673, n_regionkey#675]
+
+(22) Scan parquet 
+Output [2]: [r_regionkey#677, r_name#678]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-region]
+PushedFilters: [IsNotNull(r_name), EqualTo(r_name,EUROPE), IsNotNull(r_regionkey)]
+ReadSchema: struct<r_regionkey:int,r_name:string>
+
+(23) Filter
+Input [2]: [r_regionkey#677, r_name#678]
+Condition : ((isnotnull(r_name#678) AND (r_name#678 = EUROPE)) AND isnotnull(r_regionkey#677))
+
+(24) Project
+Output [1]: [r_regionkey#677]
+Input [2]: [r_regionkey#677, r_name#678]
+
+(25) BroadcastExchange
+Input [1]: [r_regionkey#677]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=493]
+
+(26) BroadcastHashJoin
+Left keys [1]: [n_regionkey#675]
+Right keys [1]: [r_regionkey#677]
+Join type: Inner
+Join condition: None
+
+(27) Project
+Output [2]: [ps_partkey#661, ps_supplycost#664]
+Input [4]: [ps_partkey#661, ps_supplycost#664, n_regionkey#675, r_regionkey#677]
+
+(28) HashAggregate
+Input [2]: [ps_partkey#661, ps_supplycost#664]
+Keys [1]: [ps_partkey#661]
+Functions [1]: [partial_min(ps_supplycost#664)]
+Aggregate Attributes [1]: [min#688]
+Results [2]: [ps_partkey#661, min#689]
+
+(29) Exchange
+Input [2]: [ps_partkey#661, min#689]
+Arguments: hashpartitioning(ps_partkey#661, 200), ENSURE_REQUIREMENTS, [plan_id=498]
+
+(30) HashAggregate
+Input [2]: [ps_partkey#661, min#689]
+Keys [1]: [ps_partkey#661]
+Functions [1]: [min(ps_supplycost#664)]
+Aggregate Attributes [1]: [min(ps_supplycost#664)#659]
+Results [2]: [min(ps_supplycost#664)#659 AS min(ps_supplycost)#660, ps_partkey#661]
+
+(31) Filter
+Input [2]: [min(ps_supplycost)#660, ps_partkey#661]
+Condition : isnotnull(min(ps_supplycost)#660)
+
+(32) BroadcastHashJoin
+Left keys [2]: [knownfloatingpointnormalized(normalizenanandzero(ps_supplycost#451)), p_partkey#380]
+Right keys [2]: [knownfloatingpointnormalized(normalizenanandzero(min(ps_supplycost)#660)), ps_partkey#661]
+Join type: Inner
+Join condition: None
+
+(33) Project
+Output [3]: [p_partkey#380, p_mfgr#382, ps_suppkey#449]
+Input [6]: [p_partkey#380, p_mfgr#382, ps_suppkey#449, ps_supplycost#451, min(ps_supplycost)#660, ps_partkey#661]
+
+(34) Scan parquet 
+Output [7]: [s_suppkey#419, s_name#420, s_address#421, s_nationkey#422, s_phone#423, s_acctbal#424, s_comment#425]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-supplier]
+PushedFilters: [IsNotNull(s_suppkey), IsNotNull(s_nationkey)]
+ReadSchema: struct<s_suppkey:int,s_name:string,s_address:string,s_nationkey:int,s_phone:string,s_acctbal:double,s_comment:string>
+
+(35) Filter
+Input [7]: [s_suppkey#419, s_name#420, s_address#421, s_nationkey#422, s_phone#423, s_acctbal#424, s_comment#425]
+Condition : (isnotnull(s_suppkey#419) AND isnotnull(s_nationkey#422))
+
+(36) BroadcastExchange
+Input [7]: [s_suppkey#419, s_name#420, s_address#421, s_nationkey#422, s_phone#423, s_acctbal#424, s_comment#425]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=506]
+
+(37) BroadcastHashJoin
+Left keys [1]: [ps_suppkey#449]
+Right keys [1]: [s_suppkey#419]
+Join type: Inner
+Join condition: None
+
+(38) Project
+Output [8]: [p_partkey#380, p_mfgr#382, s_name#420, s_address#421, s_nationkey#422, s_phone#423, s_acctbal#424, s_comment#425]
+Input [10]: [p_partkey#380, p_mfgr#382, ps_suppkey#449, s_suppkey#419, s_name#420, s_address#421, s_nationkey#422, s_phone#423, s_acctbal#424, s_comment#425]
+
+(39) Scan parquet 
+Output [3]: [n_nationkey#635, n_name#636, n_regionkey#637]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-nation]
+PushedFilters: [IsNotNull(n_nationkey), IsNotNull(n_regionkey)]
+ReadSchema: struct<n_nationkey:int,n_name:string,n_regionkey:int>
+
+(40) Filter
+Input [3]: [n_nationkey#635, n_name#636, n_regionkey#637]
+Condition : (isnotnull(n_nationkey#635) AND isnotnull(n_regionkey#637))
+
+(41) BroadcastExchange
+Input [3]: [n_nationkey#635, n_name#636, n_regionkey#637]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=510]
+
+(42) BroadcastHashJoin
+Left keys [1]: [s_nationkey#422]
+Right keys [1]: [n_nationkey#635]
+Join type: Inner
+Join condition: None
+
+(43) Project
+Output [9]: [p_partkey#380, p_mfgr#382, s_name#420, s_address#421, s_phone#423, s_acctbal#424, s_comment#425, n_name#636, n_regionkey#637]
+Input [11]: [p_partkey#380, p_mfgr#382, s_name#420, s_address#421, s_nationkey#422, s_phone#423, s_acctbal#424, s_comment#425, n_nationkey#635, n_name#636, n_regionkey#637]
+
+(44) Scan parquet 
+Output [2]: [r_regionkey#652, r_name#653]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-region]
+PushedFilters: [IsNotNull(r_name), EqualTo(r_name,EUROPE), IsNotNull(r_regionkey)]
+ReadSchema: struct<r_regionkey:int,r_name:string>
+
+(45) Filter
+Input [2]: [r_regionkey#652, r_name#653]
+Condition : ((isnotnull(r_name#653) AND (r_name#653 = EUROPE)) AND isnotnull(r_regionkey#652))
+
+(46) Project
+Output [1]: [r_regionkey#652]
+Input [2]: [r_regionkey#652, r_name#653]
+
+(47) BroadcastExchange
+Input [1]: [r_regionkey#652]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=514]
+
+(48) BroadcastHashJoin
+Left keys [1]: [n_regionkey#637]
+Right keys [1]: [r_regionkey#652]
+Join type: Inner
+Join condition: None
+
+(49) Project
+Output [8]: [s_name#420, s_acctbal#424, n_name#636, p_partkey#380, p_mfgr#382, s_address#421, s_phone#423, s_comment#425]
+Input [10]: [p_partkey#380, p_mfgr#382, s_name#420, s_address#421, s_phone#423, s_acctbal#424, s_comment#425, n_name#636, n_regionkey#637, r_regionkey#652]
+
+(50) TakeOrderedAndProject
+Input [8]: [s_name#420, s_acctbal#424, n_name#636, p_partkey#380, p_mfgr#382, s_address#421, s_phone#423, s_comment#425]
+Arguments: 100, [s_acctbal#424 DESC NULLS LAST, n_name#636 ASC NULLS FIRST, s_name#420 ASC NULLS FIRST, p_partkey#380 ASC NULLS FIRST], [s_name#420, s_acctbal#424, n_name#636, p_partkey#380, p_mfgr#382, s_address#421, s_phone#423, s_comment#425]
+
+(51) AdaptiveSparkPlan
+Output [8]: [s_name#420, s_acctbal#424, n_name#636, p_partkey#380, p_mfgr#382, s_address#421, s_phone#423, s_comment#425]
+Arguments: isFinalPlan=false

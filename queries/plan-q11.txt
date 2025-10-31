@@ -1,0 +1,230 @@
+== Physical Plan ==
+AdaptiveSparkPlan (20)
++- Sort (19)
+   +- Exchange (18)
+      +- Filter (17)
+         +- HashAggregate (16)
+            +- Exchange (15)
+               +- HashAggregate (14)
+                  +- Project (13)
+                     +- BroadcastHashJoin Inner BuildRight (12)
+                        :- Project (7)
+                        :  +- BroadcastHashJoin Inner BuildRight (6)
+                        :     :- Filter (2)
+                        :     :  +- Scan parquet  (1)
+                        :     +- BroadcastExchange (5)
+                        :        +- Filter (4)
+                        :           +- Scan parquet  (3)
+                        +- BroadcastExchange (11)
+                           +- Project (10)
+                              +- Filter (9)
+                                 +- Scan parquet  (8)
+
+
+(1) Scan parquet 
+Output [4]: [ps_partkey#3304, ps_suppkey#3305, ps_availqty#3306, ps_supplycost#3307]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-partsupp]
+PushedFilters: [IsNotNull(ps_suppkey)]
+ReadSchema: struct<ps_partkey:int,ps_suppkey:int,ps_availqty:int,ps_supplycost:double>
+
+(2) Filter
+Input [4]: [ps_partkey#3304, ps_suppkey#3305, ps_availqty#3306, ps_supplycost#3307]
+Condition : isnotnull(ps_suppkey#3305)
+
+(3) Scan parquet 
+Output [2]: [s_suppkey#3275, s_nationkey#3278]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-supplier]
+PushedFilters: [IsNotNull(s_suppkey), IsNotNull(s_nationkey)]
+ReadSchema: struct<s_suppkey:int,s_nationkey:int>
+
+(4) Filter
+Input [2]: [s_suppkey#3275, s_nationkey#3278]
+Condition : (isnotnull(s_suppkey#3275) AND isnotnull(s_nationkey#3278))
+
+(5) BroadcastExchange
+Input [2]: [s_suppkey#3275, s_nationkey#3278]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=2739]
+
+(6) BroadcastHashJoin
+Left keys [1]: [ps_suppkey#3305]
+Right keys [1]: [s_suppkey#3275]
+Join type: Inner
+Join condition: None
+
+(7) Project
+Output [4]: [ps_partkey#3304, ps_availqty#3306, ps_supplycost#3307, s_nationkey#3278]
+Input [6]: [ps_partkey#3304, ps_suppkey#3305, ps_availqty#3306, ps_supplycost#3307, s_suppkey#3275, s_nationkey#3278]
+
+(8) Scan parquet 
+Output [2]: [n_nationkey#3491, n_name#3492]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-nation]
+PushedFilters: [IsNotNull(n_name), EqualTo(n_name,GERMANY), IsNotNull(n_nationkey)]
+ReadSchema: struct<n_nationkey:int,n_name:string>
+
+(9) Filter
+Input [2]: [n_nationkey#3491, n_name#3492]
+Condition : ((isnotnull(n_name#3492) AND (n_name#3492 = GERMANY)) AND isnotnull(n_nationkey#3491))
+
+(10) Project
+Output [1]: [n_nationkey#3491]
+Input [2]: [n_nationkey#3491, n_name#3492]
+
+(11) BroadcastExchange
+Input [1]: [n_nationkey#3491]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=2743]
+
+(12) BroadcastHashJoin
+Left keys [1]: [s_nationkey#3278]
+Right keys [1]: [n_nationkey#3491]
+Join type: Inner
+Join condition: None
+
+(13) Project
+Output [3]: [ps_partkey#3304, ps_availqty#3306, ps_supplycost#3307]
+Input [5]: [ps_partkey#3304, ps_availqty#3306, ps_supplycost#3307, s_nationkey#3278, n_nationkey#3491]
+
+(14) HashAggregate
+Input [3]: [ps_partkey#3304, ps_availqty#3306, ps_supplycost#3307]
+Keys [1]: [ps_partkey#3304]
+Functions [1]: [partial_sum((ps_supplycost#3307 * cast(ps_availqty#3306 as double)))]
+Aggregate Attributes [1]: [sum#3538]
+Results [2]: [ps_partkey#3304, sum#3539]
+
+(15) Exchange
+Input [2]: [ps_partkey#3304, sum#3539]
+Arguments: hashpartitioning(ps_partkey#3304, 200), ENSURE_REQUIREMENTS, [plan_id=2748]
+
+(16) HashAggregate
+Input [2]: [ps_partkey#3304, sum#3539]
+Keys [1]: [ps_partkey#3304]
+Functions [1]: [sum((ps_supplycost#3307 * cast(ps_availqty#3306 as double)))]
+Aggregate Attributes [1]: [sum((ps_supplycost#3307 * cast(ps_availqty#3306 as double)))#3516]
+Results [2]: [ps_partkey#3304, sum((ps_supplycost#3307 * cast(ps_availqty#3306 as double)))#3516 AS value#3514]
+
+(17) Filter
+Input [2]: [ps_partkey#3304, value#3514]
+Condition : (isnotnull(value#3514) AND (value#3514 > Subquery subquery#3515, [id=#2727]))
+
+(18) Exchange
+Input [2]: [ps_partkey#3304, value#3514]
+Arguments: rangepartitioning(value#3514 DESC NULLS LAST, 200), ENSURE_REQUIREMENTS, [plan_id=2752]
+
+(19) Sort
+Input [2]: [ps_partkey#3304, value#3514]
+Arguments: [value#3514 DESC NULLS LAST], true, 0
+
+(20) AdaptiveSparkPlan
+Output [2]: [ps_partkey#3304, value#3514]
+Arguments: isFinalPlan=false
+
+===== Subqueries =====
+
+Subquery:1 Hosting operator id = 17 Hosting Expression = Subquery subquery#3515, [id=#2727]
+AdaptiveSparkPlan (37)
++- HashAggregate (36)
+   +- Exchange (35)
+      +- HashAggregate (34)
+         +- Project (33)
+            +- BroadcastHashJoin Inner BuildRight (32)
+               :- Project (27)
+               :  +- BroadcastHashJoin Inner BuildRight (26)
+               :     :- Filter (22)
+               :     :  +- Scan parquet  (21)
+               :     +- BroadcastExchange (25)
+               :        +- Filter (24)
+               :           +- Scan parquet  (23)
+               +- BroadcastExchange (31)
+                  +- Project (30)
+                     +- Filter (29)
+                        +- Scan parquet  (28)
+
+
+(21) Scan parquet 
+Output [3]: [ps_suppkey#3520, ps_availqty#3521, ps_supplycost#3522]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-partsupp]
+PushedFilters: [IsNotNull(ps_suppkey)]
+ReadSchema: struct<ps_suppkey:int,ps_availqty:int,ps_supplycost:double>
+
+(22) Filter
+Input [3]: [ps_suppkey#3520, ps_availqty#3521, ps_supplycost#3522]
+Condition : isnotnull(ps_suppkey#3520)
+
+(23) Scan parquet 
+Output [2]: [s_suppkey#3524, s_nationkey#3527]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-supplier]
+PushedFilters: [IsNotNull(s_suppkey), IsNotNull(s_nationkey)]
+ReadSchema: struct<s_suppkey:int,s_nationkey:int>
+
+(24) Filter
+Input [2]: [s_suppkey#3524, s_nationkey#3527]
+Condition : (isnotnull(s_suppkey#3524) AND isnotnull(s_nationkey#3527))
+
+(25) BroadcastExchange
+Input [2]: [s_suppkey#3524, s_nationkey#3527]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=2716]
+
+(26) BroadcastHashJoin
+Left keys [1]: [ps_suppkey#3520]
+Right keys [1]: [s_suppkey#3524]
+Join type: Inner
+Join condition: None
+
+(27) Project
+Output [3]: [ps_availqty#3521, ps_supplycost#3522, s_nationkey#3527]
+Input [5]: [ps_suppkey#3520, ps_availqty#3521, ps_supplycost#3522, s_suppkey#3524, s_nationkey#3527]
+
+(28) Scan parquet 
+Output [2]: [n_nationkey#3531, n_name#3532]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-nation]
+PushedFilters: [IsNotNull(n_name), EqualTo(n_name,GERMANY), IsNotNull(n_nationkey)]
+ReadSchema: struct<n_nationkey:int,n_name:string>
+
+(29) Filter
+Input [2]: [n_nationkey#3531, n_name#3532]
+Condition : ((isnotnull(n_name#3532) AND (n_name#3532 = GERMANY)) AND isnotnull(n_nationkey#3531))
+
+(30) Project
+Output [1]: [n_nationkey#3531]
+Input [2]: [n_nationkey#3531, n_name#3532]
+
+(31) BroadcastExchange
+Input [1]: [n_nationkey#3531]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=2720]
+
+(32) BroadcastHashJoin
+Left keys [1]: [s_nationkey#3527]
+Right keys [1]: [n_nationkey#3531]
+Join type: Inner
+Join condition: None
+
+(33) Project
+Output [2]: [ps_availqty#3521, ps_supplycost#3522]
+Input [4]: [ps_availqty#3521, ps_supplycost#3522, s_nationkey#3527, n_nationkey#3531]
+
+(34) HashAggregate
+Input [2]: [ps_availqty#3521, ps_supplycost#3522]
+Keys: []
+Functions [1]: [partial_sum((ps_supplycost#3522 * cast(ps_availqty#3521 as double)))]
+Aggregate Attributes [1]: [sum#3540]
+Results [1]: [sum#3541]
+
+(35) Exchange
+Input [1]: [sum#3541]
+Arguments: SinglePartition, ENSURE_REQUIREMENTS, [plan_id=2725]
+
+(36) HashAggregate
+Input [1]: [sum#3541]
+Keys: []
+Functions [1]: [sum((ps_supplycost#3522 * cast(ps_availqty#3521 as double)))]
+Aggregate Attributes [1]: [sum((ps_supplycost#3522 * cast(ps_availqty#3521 as double)))#3517]
+Results [1]: [(sum((ps_supplycost#3522 * cast(ps_availqty#3521 as double)))#3517 * 1.0E-4) AS (sum((ps_supplycost * ps_availqty)) * 0.0001)#3518]
+
+(37) AdaptiveSparkPlan
+Output [1]: [(sum((ps_supplycost * ps_availqty)) * 0.0001)#3518]
+Arguments: isFinalPlan=false

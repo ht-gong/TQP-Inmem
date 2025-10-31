@@ -1,0 +1,101 @@
+== Physical Plan ==
+AdaptiveSparkPlan (16)
++- Sort (15)
+   +- Exchange (14)
+      +- HashAggregate (13)
+         +- Exchange (12)
+            +- HashAggregate (11)
+               +- HashAggregate (10)
+                  +- Exchange (9)
+                     +- HashAggregate (8)
+                        +- Project (7)
+                           +- BroadcastHashJoin LeftOuter BuildRight (6)
+                              :- Scan parquet  (1)
+                              +- BroadcastExchange (5)
+                                 +- Project (4)
+                                    +- Filter (3)
+                                       +- Scan parquet  (2)
+
+
+(1) Scan parquet 
+Output [1]: [c_custkey#129]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-customer]
+ReadSchema: struct<c_custkey:int>
+
+(2) Scan parquet 
+Output [3]: [o_orderkey#172, o_custkey#173, o_comment#180]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-orders]
+PushedFilters: [IsNotNull(o_comment), IsNotNull(o_custkey)]
+ReadSchema: struct<o_orderkey:int,o_custkey:int,o_comment:string>
+
+(3) Filter
+Input [3]: [o_orderkey#172, o_custkey#173, o_comment#180]
+Condition : ((isnotnull(o_comment#180) AND NOT o_comment#180 LIKE %special%requests%) AND isnotnull(o_custkey#173))
+
+(4) Project
+Output [2]: [o_orderkey#172, o_custkey#173]
+Input [3]: [o_orderkey#172, o_custkey#173, o_comment#180]
+
+(5) BroadcastExchange
+Input [2]: [o_orderkey#172, o_custkey#173]
+Arguments: HashedRelationBroadcastMode(List(cast(input[1, int, true] as bigint)),false), [plan_id=182]
+
+(6) BroadcastHashJoin
+Left keys [1]: [c_custkey#129]
+Right keys [1]: [o_custkey#173]
+Join type: LeftOuter
+Join condition: None
+
+(7) Project
+Output [2]: [c_custkey#129, o_orderkey#172]
+Input [3]: [c_custkey#129, o_orderkey#172, o_custkey#173]
+
+(8) HashAggregate
+Input [2]: [c_custkey#129, o_orderkey#172]
+Keys [1]: [c_custkey#129]
+Functions [1]: [partial_count(o_orderkey#172)]
+Aggregate Attributes [1]: [count#315L]
+Results [2]: [c_custkey#129, count#316L]
+
+(9) Exchange
+Input [2]: [c_custkey#129, count#316L]
+Arguments: hashpartitioning(c_custkey#129, 200), ENSURE_REQUIREMENTS, [plan_id=187]
+
+(10) HashAggregate
+Input [2]: [c_custkey#129, count#316L]
+Keys [1]: [c_custkey#129]
+Functions [1]: [count(o_orderkey#172)]
+Aggregate Attributes [1]: [count(o_orderkey#172)#307L]
+Results [1]: [count(o_orderkey#172)#307L AS c_count#310L]
+
+(11) HashAggregate
+Input [1]: [c_count#310L]
+Keys [1]: [c_count#310L]
+Functions [1]: [partial_count(1)]
+Aggregate Attributes [1]: [count#313L]
+Results [2]: [c_count#310L, count#314L]
+
+(12) Exchange
+Input [2]: [c_count#310L, count#314L]
+Arguments: hashpartitioning(c_count#310L, 200), ENSURE_REQUIREMENTS, [plan_id=191]
+
+(13) HashAggregate
+Input [2]: [c_count#310L, count#314L]
+Keys [1]: [c_count#310L]
+Functions [1]: [count(1)]
+Aggregate Attributes [1]: [count(1)#308L]
+Results [2]: [c_count#310L, count(1)#308L AS custdist#306L]
+
+(14) Exchange
+Input [2]: [c_count#310L, custdist#306L]
+Arguments: rangepartitioning(custdist#306L DESC NULLS LAST, c_count#310L DESC NULLS LAST, 200), ENSURE_REQUIREMENTS, [plan_id=194]
+
+(15) Sort
+Input [2]: [c_count#310L, custdist#306L]
+Arguments: [custdist#306L DESC NULLS LAST, c_count#310L DESC NULLS LAST], true, 0
+
+(16) AdaptiveSparkPlan
+Output [2]: [c_count#310L, custdist#306L]
+Arguments: isFinalPlan=false

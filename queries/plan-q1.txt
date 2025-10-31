@@ -1,0 +1,56 @@
+== Physical Plan ==
+AdaptiveSparkPlan (9)
++- Sort (8)
+   +- Exchange (7)
+      +- HashAggregate (6)
+         +- Exchange (5)
+            +- HashAggregate (4)
+               +- Project (3)
+                  +- Filter (2)
+                     +- Scan parquet  (1)
+
+
+(1) Scan parquet 
+Output [7]: [l_quantity#242, l_extendedprice#243, l_discount#244, l_tax#245, l_returnflag#246, l_linestatus#247, l_shipdate#248]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-lineitem]
+PushedFilters: [IsNotNull(l_shipdate), LessThanOrEqual(l_shipdate,1998-09-02)]
+ReadSchema: struct<l_quantity:double,l_extendedprice:double,l_discount:double,l_tax:double,l_returnflag:string,l_linestatus:string,l_shipdate:date>
+
+(2) Filter
+Input [7]: [l_quantity#242, l_extendedprice#243, l_discount#244, l_tax#245, l_returnflag#246, l_linestatus#247, l_shipdate#248]
+Condition : (isnotnull(l_shipdate#248) AND (l_shipdate#248 <= 1998-09-02))
+
+(3) Project
+Output [6]: [l_quantity#242, l_extendedprice#243, l_discount#244, l_tax#245, l_returnflag#246, l_linestatus#247]
+Input [7]: [l_quantity#242, l_extendedprice#243, l_discount#244, l_tax#245, l_returnflag#246, l_linestatus#247, l_shipdate#248]
+
+(4) HashAggregate
+Input [6]: [l_quantity#242, l_extendedprice#243, l_discount#244, l_tax#245, l_returnflag#246, l_linestatus#247]
+Keys [2]: [l_returnflag#246, l_linestatus#247]
+Functions [8]: [partial_sum(l_quantity#242), partial_sum(l_extendedprice#243), partial_sum((l_extendedprice#243 * (1.0 - l_discount#244))), partial_sum(((l_extendedprice#243 * (1.0 - l_discount#244)) * (1.0 + l_tax#245))), partial_avg(l_quantity#242), partial_avg(l_extendedprice#243), partial_avg(l_discount#244), partial_count(1)]
+Aggregate Attributes [11]: [sum#331, sum#332, sum#333, sum#334, sum#335, count#336L, sum#337, count#338L, sum#339, count#340L, count#341L]
+Results [13]: [l_returnflag#246, l_linestatus#247, sum#342, sum#343, sum#344, sum#345, sum#346, count#347L, sum#348, count#349L, sum#350, count#351L, count#352L]
+
+(5) Exchange
+Input [13]: [l_returnflag#246, l_linestatus#247, sum#342, sum#343, sum#344, sum#345, sum#346, count#347L, sum#348, count#349L, sum#350, count#351L, count#352L]
+Arguments: hashpartitioning(l_returnflag#246, l_linestatus#247, 200), ENSURE_REQUIREMENTS, [plan_id=163]
+
+(6) HashAggregate
+Input [13]: [l_returnflag#246, l_linestatus#247, sum#342, sum#343, sum#344, sum#345, sum#346, count#347L, sum#348, count#349L, sum#350, count#351L, count#352L]
+Keys [2]: [l_returnflag#246, l_linestatus#247]
+Functions [8]: [sum(l_quantity#242), sum(l_extendedprice#243), sum((l_extendedprice#243 * (1.0 - l_discount#244))), sum(((l_extendedprice#243 * (1.0 - l_discount#244)) * (1.0 + l_tax#245))), avg(l_quantity#242), avg(l_extendedprice#243), avg(l_discount#244), count(1)]
+Aggregate Attributes [8]: [sum(l_quantity#242)#314, sum(l_extendedprice#243)#315, sum((l_extendedprice#243 * (1.0 - l_discount#244)))#319, sum(((l_extendedprice#243 * (1.0 - l_discount#244)) * (1.0 + l_tax#245)))#320, avg(l_quantity#242)#316, avg(l_extendedprice#243)#317, avg(l_discount#244)#318, count(1)#313L]
+Results [10]: [l_returnflag#246, l_linestatus#247, sum(l_quantity#242)#314 AS sum_qty#305, sum(l_extendedprice#243)#315 AS sum_base_price#306, sum((l_extendedprice#243 * (1.0 - l_discount#244)))#319 AS sum_disc_price#307, sum(((l_extendedprice#243 * (1.0 - l_discount#244)) * (1.0 + l_tax#245)))#320 AS sum_charge#308, avg(l_quantity#242)#316 AS avg_qty#309, avg(l_extendedprice#243)#317 AS avg_price#310, avg(l_discount#244)#318 AS avg_disc#311, count(1)#313L AS count_order#312L]
+
+(7) Exchange
+Input [10]: [l_returnflag#246, l_linestatus#247, sum_qty#305, sum_base_price#306, sum_disc_price#307, sum_charge#308, avg_qty#309, avg_price#310, avg_disc#311, count_order#312L]
+Arguments: rangepartitioning(l_returnflag#246 ASC NULLS FIRST, l_linestatus#247 ASC NULLS FIRST, 200), ENSURE_REQUIREMENTS, [plan_id=166]
+
+(8) Sort
+Input [10]: [l_returnflag#246, l_linestatus#247, sum_qty#305, sum_base_price#306, sum_disc_price#307, sum_charge#308, avg_qty#309, avg_price#310, avg_disc#311, count_order#312L]
+Arguments: [l_returnflag#246 ASC NULLS FIRST, l_linestatus#247 ASC NULLS FIRST], true, 0
+
+(9) AdaptiveSparkPlan
+Output [10]: [l_returnflag#246, l_linestatus#247, sum_qty#305, sum_base_price#306, sum_disc_price#307, sum_charge#308, avg_qty#309, avg_price#310, avg_disc#311, count_order#312L]
+Arguments: isFinalPlan=false

@@ -1,0 +1,132 @@
+== Physical Plan ==
+AdaptiveSparkPlan (21)
++- Sort (20)
+   +- Exchange (19)
+      +- HashAggregate (18)
+         +- Exchange (17)
+            +- HashAggregate (16)
+               +- HashAggregate (15)
+                  +- Exchange (14)
+                     +- HashAggregate (13)
+                        +- Project (12)
+                           +- BroadcastHashJoin Inner BuildLeft (11)
+                              :- BroadcastExchange (8)
+                              :  +- BroadcastHashJoin LeftAnti BuildRight (7)
+                              :     :- Filter (2)
+                              :     :  +- Scan parquet  (1)
+                              :     +- BroadcastExchange (6)
+                              :        +- Project (5)
+                              :           +- Filter (4)
+                              :              +- Scan parquet  (3)
+                              +- Filter (10)
+                                 +- Scan parquet  (9)
+
+
+(1) Scan parquet 
+Output [2]: [ps_partkey#455, ps_suppkey#456]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-partsupp]
+PushedFilters: [IsNotNull(ps_partkey)]
+ReadSchema: struct<ps_partkey:int,ps_suppkey:int>
+
+(2) Filter
+Input [2]: [ps_partkey#455, ps_suppkey#456]
+Condition : isnotnull(ps_partkey#455)
+
+(3) Scan parquet 
+Output [2]: [s_suppkey#426, s_comment#432]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-supplier]
+PushedFilters: [IsNotNull(s_comment)]
+ReadSchema: struct<s_suppkey:int,s_comment:string>
+
+(4) Filter
+Input [2]: [s_suppkey#426, s_comment#432]
+Condition : (isnotnull(s_comment#432) AND s_comment#432 LIKE %Customer%Complaints%)
+
+(5) Project
+Output [1]: [s_suppkey#426]
+Input [2]: [s_suppkey#426, s_comment#432]
+
+(6) BroadcastExchange
+Input [1]: [s_suppkey#426]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),true), [plan_id=427]
+
+(7) BroadcastHashJoin
+Left keys [1]: [ps_suppkey#456]
+Right keys [1]: [s_suppkey#426]
+Join type: LeftAnti
+Join condition: None
+
+(8) BroadcastExchange
+Input [2]: [ps_partkey#455, ps_suppkey#456]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=430]
+
+(9) Scan parquet 
+Output [4]: [p_partkey#387, p_brand#390, p_type#391, p_size#392]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-part]
+PushedFilters: [IsNotNull(p_brand), IsNotNull(p_type), Not(EqualTo(p_brand,Brand#45)), Not(StringStartsWith(p_type,MEDIUM POLISHED)), In(p_size, [14,19,23,3,36,45,49,9]), IsNotNull(p_partkey)]
+ReadSchema: struct<p_partkey:int,p_brand:string,p_type:string,p_size:int>
+
+(10) Filter
+Input [4]: [p_partkey#387, p_brand#390, p_type#391, p_size#392]
+Condition : (((((isnotnull(p_brand#390) AND isnotnull(p_type#391)) AND NOT (p_brand#390 = Brand#45)) AND NOT StartsWith(p_type#391, MEDIUM POLISHED)) AND p_size#392 IN (49,14,23,45,19,3,36,9)) AND isnotnull(p_partkey#387))
+
+(11) BroadcastHashJoin
+Left keys [1]: [ps_partkey#455]
+Right keys [1]: [p_partkey#387]
+Join type: Inner
+Join condition: None
+
+(12) Project
+Output [4]: [ps_suppkey#456, p_brand#390, p_type#391, p_size#392]
+Input [6]: [ps_partkey#455, ps_suppkey#456, p_partkey#387, p_brand#390, p_type#391, p_size#392]
+
+(13) HashAggregate
+Input [4]: [ps_suppkey#456, p_brand#390, p_type#391, p_size#392]
+Keys [4]: [p_brand#390, p_type#391, p_size#392, ps_suppkey#456]
+Functions: []
+Aggregate Attributes: []
+Results [4]: [p_brand#390, p_type#391, p_size#392, ps_suppkey#456]
+
+(14) Exchange
+Input [4]: [p_brand#390, p_type#391, p_size#392, ps_suppkey#456]
+Arguments: hashpartitioning(p_brand#390, p_type#391, p_size#392, ps_suppkey#456, 200), ENSURE_REQUIREMENTS, [plan_id=435]
+
+(15) HashAggregate
+Input [4]: [p_brand#390, p_type#391, p_size#392, ps_suppkey#456]
+Keys [4]: [p_brand#390, p_type#391, p_size#392, ps_suppkey#456]
+Functions: []
+Aggregate Attributes: []
+Results [4]: [p_brand#390, p_type#391, p_size#392, ps_suppkey#456]
+
+(16) HashAggregate
+Input [4]: [p_brand#390, p_type#391, p_size#392, ps_suppkey#456]
+Keys [3]: [p_brand#390, p_type#391, p_size#392]
+Functions [1]: [partial_count(distinct ps_suppkey#456)]
+Aggregate Attributes [1]: [count(ps_suppkey#456)#667L]
+Results [4]: [p_brand#390, p_type#391, p_size#392, count#674L]
+
+(17) Exchange
+Input [4]: [p_brand#390, p_type#391, p_size#392, count#674L]
+Arguments: hashpartitioning(p_brand#390, p_type#391, p_size#392, 200), ENSURE_REQUIREMENTS, [plan_id=439]
+
+(18) HashAggregate
+Input [4]: [p_brand#390, p_type#391, p_size#392, count#674L]
+Keys [3]: [p_brand#390, p_type#391, p_size#392]
+Functions [1]: [count(distinct ps_suppkey#456)]
+Aggregate Attributes [1]: [count(ps_suppkey#456)#667L]
+Results [4]: [p_brand#390, p_type#391, p_size#392, count(ps_suppkey#456)#667L AS supplier_cnt#665L]
+
+(19) Exchange
+Input [4]: [p_brand#390, p_type#391, p_size#392, supplier_cnt#665L]
+Arguments: rangepartitioning(supplier_cnt#665L DESC NULLS LAST, p_brand#390 ASC NULLS FIRST, p_type#391 ASC NULLS FIRST, p_size#392 ASC NULLS FIRST, 200), ENSURE_REQUIREMENTS, [plan_id=442]
+
+(20) Sort
+Input [4]: [p_brand#390, p_type#391, p_size#392, supplier_cnt#665L]
+Arguments: [supplier_cnt#665L DESC NULLS LAST, p_brand#390 ASC NULLS FIRST, p_type#391 ASC NULLS FIRST, p_size#392 ASC NULLS FIRST], true, 0
+
+(21) AdaptiveSparkPlan
+Output [4]: [p_brand#390, p_type#391, p_size#392, supplier_cnt#665L]
+Arguments: isFinalPlan=false

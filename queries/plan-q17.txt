@@ -1,0 +1,132 @@
+== Physical Plan ==
+AdaptiveSparkPlan (21)
++- HashAggregate (20)
+   +- Exchange (19)
+      +- HashAggregate (18)
+         +- Project (17)
+            +- BroadcastHashJoin Inner BuildRight (16)
+               :- Project (8)
+               :  +- BroadcastHashJoin Inner BuildRight (7)
+               :     :- Filter (2)
+               :     :  +- Scan parquet  (1)
+               :     +- BroadcastExchange (6)
+               :        +- Project (5)
+               :           +- Filter (4)
+               :              +- Scan parquet  (3)
+               +- BroadcastExchange (15)
+                  +- Filter (14)
+                     +- HashAggregate (13)
+                        +- Exchange (12)
+                           +- HashAggregate (11)
+                              +- Filter (10)
+                                 +- Scan parquet  (9)
+
+
+(1) Scan parquet 
+Output [3]: [l_partkey#915, l_quantity#918, l_extendedprice#919]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-lineitem]
+PushedFilters: [IsNotNull(l_partkey), IsNotNull(l_quantity)]
+ReadSchema: struct<l_partkey:int,l_quantity:double,l_extendedprice:double>
+
+(2) Filter
+Input [3]: [l_partkey#915, l_quantity#918, l_extendedprice#919]
+Condition : (isnotnull(l_partkey#915) AND isnotnull(l_quantity#918))
+
+(3) Scan parquet 
+Output [3]: [p_partkey#703, p_brand#706, p_container#709]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-part]
+PushedFilters: [IsNotNull(p_brand), IsNotNull(p_container), EqualTo(p_brand,Brand#23), EqualTo(p_container,MED~BOX), IsNotNull(p_partkey)]
+ReadSchema: struct<p_partkey:int,p_brand:string,p_container:string>
+
+(4) Filter
+Input [3]: [p_partkey#703, p_brand#706, p_container#709]
+Condition : ((((isnotnull(p_brand#706) AND isnotnull(p_container#709)) AND (p_brand#706 = Brand#23)) AND (p_container#709 = MED~BOX)) AND isnotnull(p_partkey#703))
+
+(5) Project
+Output [1]: [p_partkey#703]
+Input [3]: [p_partkey#703, p_brand#706, p_container#709]
+
+(6) BroadcastExchange
+Input [1]: [p_partkey#703]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=655]
+
+(7) BroadcastHashJoin
+Left keys [1]: [l_partkey#915]
+Right keys [1]: [p_partkey#703]
+Join type: Inner
+Join condition: None
+
+(8) Project
+Output [3]: [l_quantity#918, l_extendedprice#919, p_partkey#703]
+Input [4]: [l_partkey#915, l_quantity#918, l_extendedprice#919, p_partkey#703]
+
+(9) Scan parquet 
+Output [2]: [l_partkey#986, l_quantity#989]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-lineitem]
+PushedFilters: [IsNotNull(l_partkey)]
+ReadSchema: struct<l_partkey:int,l_quantity:double>
+
+(10) Filter
+Input [2]: [l_partkey#986, l_quantity#989]
+Condition : isnotnull(l_partkey#986)
+
+(11) HashAggregate
+Input [2]: [l_partkey#986, l_quantity#989]
+Keys [1]: [l_partkey#986]
+Functions [1]: [partial_avg(l_quantity#989)]
+Aggregate Attributes [2]: [sum#1005, count#1006L]
+Results [3]: [l_partkey#986, sum#1007, count#1008L]
+
+(12) Exchange
+Input [3]: [l_partkey#986, sum#1007, count#1008L]
+Arguments: hashpartitioning(l_partkey#986, 200), ENSURE_REQUIREMENTS, [plan_id=658]
+
+(13) HashAggregate
+Input [3]: [l_partkey#986, sum#1007, count#1008L]
+Keys [1]: [l_partkey#986]
+Functions [1]: [avg(l_quantity#989)]
+Aggregate Attributes [1]: [avg(l_quantity#989)#983]
+Results [2]: [(0.2 * avg(l_quantity#989)#983) AS (0.2 * avg(l_quantity))#984, l_partkey#986]
+
+(14) Filter
+Input [2]: [(0.2 * avg(l_quantity))#984, l_partkey#986]
+Condition : isnotnull((0.2 * avg(l_quantity))#984)
+
+(15) BroadcastExchange
+Input [2]: [(0.2 * avg(l_quantity))#984, l_partkey#986]
+Arguments: HashedRelationBroadcastMode(List(cast(input[1, int, true] as bigint)),false), [plan_id=662]
+
+(16) BroadcastHashJoin
+Left keys [1]: [p_partkey#703]
+Right keys [1]: [l_partkey#986]
+Join type: Inner
+Join condition: (l_quantity#918 < (0.2 * avg(l_quantity))#984)
+
+(17) Project
+Output [1]: [l_extendedprice#919]
+Input [5]: [l_quantity#918, l_extendedprice#919, p_partkey#703, (0.2 * avg(l_quantity))#984, l_partkey#986]
+
+(18) HashAggregate
+Input [1]: [l_extendedprice#919]
+Keys: []
+Functions [1]: [partial_sum(l_extendedprice#919)]
+Aggregate Attributes [1]: [sum#1003]
+Results [1]: [sum#1004]
+
+(19) Exchange
+Input [1]: [sum#1004]
+Arguments: SinglePartition, ENSURE_REQUIREMENTS, [plan_id=667]
+
+(20) HashAggregate
+Input [1]: [sum#1004]
+Keys: []
+Functions [1]: [sum(l_extendedprice#919)]
+Aggregate Attributes [1]: [sum(l_extendedprice#919)#1001]
+Results [1]: [(sum(l_extendedprice#919)#1001 / 7.0) AS avg_yearly#981]
+
+(21) AdaptiveSparkPlan
+Output [1]: [avg_yearly#981]
+Arguments: isFinalPlan=false

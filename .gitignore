@@ -1,0 +1,12 @@
+__pycache__/
+tmp/
+result*
+build/
+experiments/experiment_mb/*.pth
+experiments/experiment_mb/*.csv
+experiments/experiment_mb/figures
+experiments/figures
+*egg*
+.pytest_cache
+.vscode
+*.so

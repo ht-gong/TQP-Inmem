@@ -1,0 +1,104 @@
+  l_returnflag l_linestatus   sum_qty      sum_base_price      sum_disc_price          sum_charge   avg_qty    avg_price  avg_disc  count_order
+0            A            F  37734107  56586554400.730003  53758257134.869995  55909065222.827690 25.522006 38273.129735  0.049985      1478493
+1            N            F    991417   1487504710.380000   1413082168.054100   1469649223.194375 25.516472 38284.467761  0.050093        38854
+2            N            O  74476040 111701729697.740005 106118230307.605591 110367043872.497009 25.502227 38249.117989  0.049997      2920374
+3            R            F  37719753  56568041380.900002  53741292684.604004  55889619119.831932 25.505794 38250.854626  0.050009      1478870
+               s_name   s_acctbal          n_name  p_partkey          p_mfgr                          s_address          s_phone                                                                                      s_comment
+0  Supplier#000005359 9938.530000  UNITED KINGDOM     185358  Manufacturer#4           bgxj2K0w1kJvxYl5mhCfou,W  33-429-790-6131                          blithely silent pinto beans are furiously. slyly final deposits acros
+1  Supplier#000005969 9937.840000         ROMANIA     108438  Manufacturer#1  rdnmd9c8EG1EIAYY3LPVa4yUNx6OwyVaQ  29-520-692-3537                carefully slow deposits use furiously. slyly ironic platelets above the ironic 
+2  Supplier#000005250 9936.220000  UNITED KINGDOM        249  Manufacturer#4              qX AB0vP8mJEWeBuY9jri  33-320-228-2957  blithely special packages are. stealthily express deposits across the closely final instructi
+3  Supplier#000002324 9923.770000         GERMANY      29821  Manufacturer#4                       uXcnR7tv87dG  17-779-299-1839                                        quickly express packages breach quiet pinto beans. requ
+4  Supplier#000006373 9871.220000         GERMANY      43868  Manufacturer#5                         iSLO35z7Ae  17-813-485-8637                                                 never silent deposits integrate furiously blit
+   l_orderkey       revenue o_orderdate  o_shippriority
+0     2456423 406181.011100  1995-03-05               0
+1     3459808 405838.698900  1995-03-04               0
+2      492164 390324.061000  1995-02-19               0
+3     1188320 384537.935900  1995-03-09               0
+4     2435712 378673.055800  1995-02-26               0
+   o_orderpriority  order_count
+0         1-URGENT        10594
+1           2-HIGH        10476
+2         3-MEDIUM        10410
+3  4-NOT SPECIFIED        10556
+4            5-LOW        10487
+      n_name         revenue
+0  INDONESIA 55502041.169700
+1    VIETNAM 55295086.996700
+2      CHINA 53724494.256600
+3      INDIA 52035512.000200
+4      JAPAN 45410175.695400
+           revenue
+0 123141078.228300
+  supp_nation cust_nation  l_year         revenue
+0      FRANCE     GERMANY    1995 54639732.733600
+1      FRANCE     GERMANY    1996 54633083.307600
+2     GERMANY      FRANCE    1995 52531746.669700
+3     GERMANY      FRANCE    1996 52520549.022400
+   o_year  mkt_share
+0    1995   0.034436
+1    1996   0.041486
+    nation  o_year      sum_profit
+0  ALGERIA    1998 31342867.234500
+1  ALGERIA    1997 57138193.023300
+2  ALGERIA    1996 56140140.133000
+3  ALGERIA    1995 53051469.653400
+4  ALGERIA    1994 53867582.128600
+   c_custkey              c_name       revenue   c_acctbal          n_name                     c_address          c_phone                                                                                                     c_comment
+0      57040  Customer#000057040 734235.245500  632.870000           JAPAN                    nICtsILWBB  22-895-641-3466                                                                 requests sleep blithely about the furiously i
+1     143347  Customer#000143347 721002.694800 2557.470000           EGYPT                   ,Q9Ml3w0gvX  14-742-935-3718                                                              fluffily bold excuses haggle finally after the u
+2      60838  Customer#000060838 679127.307700 2454.770000          BRAZIL  VWmQhWweqj5hFpcvhGFBeOY9hJ4m  12-913-494-9813          furiously even pinto beans integrate under the ruthless foxes; ironic, even dolphins across the slyl
+3     101998  Customer#000101998 637029.566700 3790.890000  UNITED KINGDOM             0,ORojfDdyMca2E2H  33-593-865-6378  accounts doze blithely! enticing, final deposits sleep blithely special accounts. slyly express accounts pla
+4     125341  Customer#000125341 633508.086000 4983.510000         GERMANY      9YRcnoUPOM7Sa8xymhsDHdQg  17-582-695-5962                                                                quickly express requests wake quickly blithely
+   ps_partkey           value
+0      129760 17538456.860000
+1      166726 16503353.920000
+2      191287 16474801.970000
+3      161758 16101755.540000
+4       34452 15983844.720000
+  l_shipmode  high_line_count  low_line_count
+0       MAIL             6202            9324
+1       SHIP             6200            9262
+   c_count  custdist
+0        0     50004
+1        9      6641
+2       10      6566
+3       11      6058
+4        8      5949
+   promo_revenue
+0      16.380779
+   s_suppkey              s_name          s_address          s_phone  total_revenue
+0       8449  Supplier#000008449  5BXWsJERA2mP5OyO4  20-469-856-8873 1772627.208700
+    p_brand                   p_type  p_size  supplier_cnt
+0  Brand#55       MEDIUM BRUSHED TIN       9            20
+1  Brand#56     ECONOMY POLISHED TIN      45            20
+2  Brand#59       PROMO ANODIZED TIN       3            20
+3  Brand#60       PROMO POLISHED TIN       3            20
+4  Brand#68  STANDARD BRUSHED COPPER      36            20
+    avg_yearly
+0 80946.152857
+               c_name  c_custkey  o_orderkey o_orderdate  o_totalprice  sum(l_quantity)
+0  Customer#000128120     128120     4722021  1994-04-07 544089.090000              323
+1  Customer#000144617     144617     3043270  1997-02-12 530604.440000              317
+2  Customer#000013940      13940     2232932  1997-04-13 522720.610000              304
+3  Customer#000066790      66790     2199712  1996-09-30 515531.820000              327
+4  Customer#000046435      46435     4745607  1997-07-03 508047.990000              309
+        revenue
+0 856745.023300
+               s_name                             s_address
+0  Supplier#000000020             JtPqm19E7tF 152Rl1wQZ8j0H
+1  Supplier#000000091  35WVnU7GLNbQDcc2TARavGtk6RB6ZCd46UAY
+2  Supplier#000000091  35WVnU7GLNbQDcc2TARavGtk6RB6ZCd46UAY
+3  Supplier#000000091  35WVnU7GLNbQDcc2TARavGtk6RB6ZCd46UAY
+4  Supplier#000000197      3oYqODDUGH3XsHXmPuzYHW5NLU3,ONZl
+               s_name  numwait
+0  Supplier#000002829       20
+1  Supplier#000005808       18
+2  Supplier#000000262       17
+3  Supplier#000000496       17
+4  Supplier#000002160       17
+  cntrycode  numcust     totacctbal
+0        13      888 6737713.990000
+1        17      861 6460573.720000
+2        18      964 7236687.400000
+3        23      892 6701457.950000
+4        29      948 7158866.630000

@@ -1,0 +1,46 @@
+== Physical Plan ==
+AdaptiveSparkPlan (7)
++- HashAggregate (6)
+   +- Exchange (5)
+      +- HashAggregate (4)
+         +- Project (3)
+            +- Filter (2)
+               +- Scan parquet  (1)
+
+
+(1) Scan parquet 
+Output [4]: [l_quantity#1867, l_extendedprice#1868, l_discount#1869, l_shipdate#1873]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-lineitem]
+PushedFilters: [IsNotNull(l_shipdate), IsNotNull(l_discount), IsNotNull(l_quantity), GreaterThanOrEqual(l_shipdate,1994-01-01), LessThan(l_shipdate,1995-01-01), GreaterThanOrEqual(l_discount,0.05), LessThanOrEqual(l_discount,0.07), LessThan(l_quantity,24.0)]
+ReadSchema: struct<l_quantity:double,l_extendedprice:double,l_discount:double,l_shipdate:date>
+
+(2) Filter
+Input [4]: [l_quantity#1867, l_extendedprice#1868, l_discount#1869, l_shipdate#1873]
+Condition : (((((((isnotnull(l_shipdate#1873) AND isnotnull(l_discount#1869)) AND isnotnull(l_quantity#1867)) AND (l_shipdate#1873 >= 1994-01-01)) AND (l_shipdate#1873 < 1995-01-01)) AND (l_discount#1869 >= 0.05)) AND (l_discount#1869 <= 0.07)) AND (l_quantity#1867 < 24.0))
+
+(3) Project
+Output [2]: [l_extendedprice#1868, l_discount#1869]
+Input [4]: [l_quantity#1867, l_extendedprice#1868, l_discount#1869, l_shipdate#1873]
+
+(4) HashAggregate
+Input [2]: [l_extendedprice#1868, l_discount#1869]
+Keys: []
+Functions [1]: [partial_sum((l_extendedprice#1868 * l_discount#1869))]
+Aggregate Attributes [1]: [sum#1933]
+Results [1]: [sum#1934]
+
+(5) Exchange
+Input [1]: [sum#1934]
+Arguments: SinglePartition, ENSURE_REQUIREMENTS, [plan_id=1353]
+
+(6) HashAggregate
+Input [1]: [sum#1934]
+Keys: []
+Functions [1]: [sum((l_extendedprice#1868 * l_discount#1869))]
+Aggregate Attributes [1]: [sum((l_extendedprice#1868 * l_discount#1869))#1931]
+Results [1]: [sum((l_extendedprice#1868 * l_discount#1869))#1931 AS revenue#1930]
+
+(7) AdaptiveSparkPlan
+Output [1]: [revenue#1930]
+Arguments: isFinalPlan=false

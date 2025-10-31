@@ -1,0 +1,192 @@
+[Generate Physical Plan]                                                        
+== Physical Plan ==
+AdaptiveSparkPlan (32)
++- Sort (31)
+   +- Exchange (30)
+      +- Project (29)
+         +- BroadcastHashJoin Inner BuildRight (28)
+            :- Project (23)
+            :  +- BroadcastHashJoin Inner BuildRight (22)
+            :     :- Project (8)
+            :     :  +- BroadcastHashJoin Inner BuildRight (7)
+            :     :     :- Filter (2)
+            :     :     :  +- Scan parquet  (1)
+            :     :     +- BroadcastExchange (6)
+            :     :        +- Project (5)
+            :     :           +- Filter (4)
+            :     :              +- Scan parquet  (3)
+            :     +- BroadcastExchange (21)
+            :        +- Project (20)
+            :           +- BroadcastHashJoin Inner BuildRight (19)
+            :              :- Filter (10)
+            :              :  +- Scan parquet  (9)
+            :              +- BroadcastExchange (18)
+            :                 +- Filter (17)
+            :                    +- HashAggregate (16)
+            :                       +- Exchange (15)
+            :                          +- HashAggregate (14)
+            :                             +- Project (13)
+            :                                +- Filter (12)
+            :                                   +- Scan parquet  (11)
+            +- BroadcastExchange (27)
+               +- Project (26)
+                  +- Filter (25)
+                     +- Scan parquet  (24)
+
+
+(1) Scan parquet 
+Output [4]: [s_suppkey#66, s_name#67, s_address#68, s_nationkey#69]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-supplier]
+PushedFilters: [IsNotNull(s_nationkey), IsNotNull(s_suppkey)]
+ReadSchema: struct<s_suppkey:int,s_name:string,s_address:string,s_nationkey:int>
+
+(2) Filter
+Input [4]: [s_suppkey#66, s_name#67, s_address#68, s_nationkey#69]
+Condition : (isnotnull(s_nationkey#69) AND isnotnull(s_suppkey#66))
+
+(3) Scan parquet 
+Output [2]: [n_nationkey#282, n_name#283]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-nation]
+PushedFilters: [IsNotNull(n_name), EqualTo(n_name,CANADA), IsNotNull(n_nationkey)]
+ReadSchema: struct<n_nationkey:int,n_name:string>
+
+(4) Filter
+Input [2]: [n_nationkey#282, n_name#283]
+Condition : ((isnotnull(n_name#283) AND (n_name#283 = CANADA)) AND isnotnull(n_nationkey#282))
+
+(5) Project
+Output [1]: [n_nationkey#282]
+Input [2]: [n_nationkey#282, n_name#283]
+
+(6) BroadcastExchange
+Input [1]: [n_nationkey#282]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=240]
+
+(7) BroadcastHashJoin
+Left keys [1]: [s_nationkey#69]
+Right keys [1]: [n_nationkey#282]
+Join type: Inner
+Join condition: None
+
+(8) Project
+Output [3]: [s_suppkey#66, s_name#67, s_address#68]
+Input [5]: [s_suppkey#66, s_name#67, s_address#68, s_nationkey#69, n_nationkey#282]
+
+(9) Scan parquet 
+Output [3]: [ps_partkey#95, ps_suppkey#96, ps_availqty#97]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-partsupp]
+PushedFilters: [IsNotNull(ps_availqty), IsNotNull(ps_partkey), IsNotNull(ps_suppkey)]
+ReadSchema: struct<ps_partkey:int,ps_suppkey:int,ps_availqty:int>
+
+(10) Filter
+Input [3]: [ps_partkey#95, ps_suppkey#96, ps_availqty#97]
+Condition : ((isnotnull(ps_availqty#97) AND isnotnull(ps_partkey#95)) AND isnotnull(ps_suppkey#96))
+
+(11) Scan parquet 
+Output [4]: [l_partkey#239, l_suppkey#240, l_quantity#242, l_shipdate#248]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-lineitem]
+PushedFilters: [IsNotNull(l_shipdate), GreaterThanOrEqual(l_shipdate,1994-01-01), LessThan(l_shipdate,1995-01-01), IsNotNull(l_partkey), IsNotNull(l_suppkey)]
+ReadSchema: struct<l_partkey:int,l_suppkey:int,l_quantity:double,l_shipdate:date>
+
+(12) Filter
+Input [4]: [l_partkey#239, l_suppkey#240, l_quantity#242, l_shipdate#248]
+Condition : ((((isnotnull(l_shipdate#248) AND (l_shipdate#248 >= 1994-01-01)) AND (l_shipdate#248 < 1995-01-01)) AND isnotnull(l_partkey#239)) AND isnotnull(l_suppkey#240))
+
+(13) Project
+Output [3]: [l_partkey#239, l_suppkey#240, l_quantity#242]
+Input [4]: [l_partkey#239, l_suppkey#240, l_quantity#242, l_shipdate#248]
+
+(14) HashAggregate
+Input [3]: [l_partkey#239, l_suppkey#240, l_quantity#242]
+Keys [2]: [l_partkey#239, l_suppkey#240]
+Functions [1]: [partial_sum(l_quantity#242)]
+Aggregate Attributes [1]: [sum#310]
+Results [3]: [l_partkey#239, l_suppkey#240, sum#311]
+
+(15) Exchange
+Input [3]: [l_partkey#239, l_suppkey#240, sum#311]
+Arguments: hashpartitioning(l_partkey#239, l_suppkey#240, 200), ENSURE_REQUIREMENTS, [plan_id=243]
+
+(16) HashAggregate
+Input [3]: [l_partkey#239, l_suppkey#240, sum#311]
+Keys [2]: [l_partkey#239, l_suppkey#240]
+Functions [1]: [sum(l_quantity#242)]
+Aggregate Attributes [1]: [sum(l_quantity#242)#306]
+Results [3]: [(0.5 * sum(l_quantity#242)#306) AS (0.5 * sum(l_quantity))#307, l_partkey#239, l_suppkey#240]
+
+(17) Filter
+Input [3]: [(0.5 * sum(l_quantity))#307, l_partkey#239, l_suppkey#240]
+Condition : isnotnull((0.5 * sum(l_quantity))#307)
+
+(18) BroadcastExchange
+Input [3]: [(0.5 * sum(l_quantity))#307, l_partkey#239, l_suppkey#240]
+Arguments: HashedRelationBroadcastMode(List((shiftleft(cast(input[1, int, true] as bigint), 32) | (cast(input[2, int, true] as bigint) & 4294967295))),false), [plan_id=247]
+
+(19) BroadcastHashJoin
+Left keys [2]: [ps_partkey#95, ps_suppkey#96]
+Right keys [2]: [l_partkey#239, l_suppkey#240]
+Join type: Inner
+Join condition: (cast(ps_availqty#97 as double) > (0.5 * sum(l_quantity))#307)
+
+(20) Project
+Output [2]: [ps_partkey#95, ps_suppkey#96]
+Input [6]: [ps_partkey#95, ps_suppkey#96, ps_availqty#97, (0.5 * sum(l_quantity))#307, l_partkey#239, l_suppkey#240]
+
+(21) BroadcastExchange
+Input [2]: [ps_partkey#95, ps_suppkey#96]
+Arguments: HashedRelationBroadcastMode(List(cast(input[1, int, true] as bigint)),false), [plan_id=251]
+
+(22) BroadcastHashJoin
+Left keys [1]: [s_suppkey#66]
+Right keys [1]: [ps_suppkey#96]
+Join type: Inner
+Join condition: None
+
+(23) Project
+Output [3]: [s_name#67, s_address#68, ps_partkey#95]
+Input [5]: [s_suppkey#66, s_name#67, s_address#68, ps_partkey#95, ps_suppkey#96]
+
+(24) Scan parquet 
+Output [2]: [p_partkey#27, p_name#28]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-part]
+PushedFilters: [IsNotNull(p_name), StringStartsWith(p_name,forest), IsNotNull(p_partkey)]
+ReadSchema: struct<p_partkey:int,p_name:string>
+
+(25) Filter
+Input [2]: [p_partkey#27, p_name#28]
+Condition : ((isnotnull(p_name#28) AND StartsWith(p_name#28, forest)) AND isnotnull(p_partkey#27))
+
+(26) Project
+Output [1]: [p_partkey#27]
+Input [2]: [p_partkey#27, p_name#28]
+
+(27) BroadcastExchange
+Input [1]: [p_partkey#27]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=255]
+
+(28) BroadcastHashJoin
+Left keys [1]: [ps_partkey#95]
+Right keys [1]: [p_partkey#27]
+Join type: Inner
+Join condition: None
+
+(29) Project
+Output [2]: [s_name#67, s_address#68]
+Input [4]: [s_name#67, s_address#68, ps_partkey#95, p_partkey#27]
+
+(30) Exchange
+Input [2]: [s_name#67, s_address#68]
+Arguments: rangepartitioning(s_name#67 ASC NULLS FIRST, 200), ENSURE_REQUIREMENTS, [plan_id=259]
+
+(31) Sort
+Input [2]: [s_name#67, s_address#68]
+Arguments: [s_name#67 ASC NULLS FIRST], true, 0
+
+(32) AdaptiveSparkPlan
+Output [2]: [s_name#67, s_address#68]
+Arguments: isFinalPlan=false

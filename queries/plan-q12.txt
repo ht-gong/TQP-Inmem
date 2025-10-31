@@ -1,0 +1,86 @@
+== Physical Plan ==
+AdaptiveSparkPlan (14)
++- Sort (13)
+   +- Exchange (12)
+      +- HashAggregate (11)
+         +- Exchange (10)
+            +- HashAggregate (9)
+               +- Project (8)
+                  +- BroadcastHashJoin Inner BuildLeft (7)
+                     :- BroadcastExchange (3)
+                     :  +- Filter (2)
+                     :     +- Scan parquet  (1)
+                     +- Project (6)
+                        +- Filter (5)
+                           +- Scan parquet  (4)
+
+
+(1) Scan parquet 
+Output [2]: [o_orderkey#3714, o_orderpriority#3719]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-orders]
+PushedFilters: [IsNotNull(o_orderkey)]
+ReadSchema: struct<o_orderkey:int,o_orderpriority:string>
+
+(2) Filter
+Input [2]: [o_orderkey#3714, o_orderpriority#3719]
+Condition : isnotnull(o_orderkey#3714)
+
+(3) BroadcastExchange
+Input [2]: [o_orderkey#3714, o_orderpriority#3719]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=2938]
+
+(4) Scan parquet 
+Output [5]: [l_orderkey#3780, l_shipdate#3790, l_commitdate#3791, l_receiptdate#3792, l_shipmode#3794]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-lineitem]
+PushedFilters: [IsNotNull(l_commitdate), IsNotNull(l_receiptdate), IsNotNull(l_shipdate), In(l_shipmode, [MAIL,SHIP]), GreaterThanOrEqual(l_receiptdate,1994-01-01), LessThan(l_receiptdate,1995-01-01), IsNotNull(l_orderkey)]
+ReadSchema: struct<l_orderkey:int,l_shipdate:date,l_commitdate:date,l_receiptdate:date,l_shipmode:string>
+
+(5) Filter
+Input [5]: [l_orderkey#3780, l_shipdate#3790, l_commitdate#3791, l_receiptdate#3792, l_shipmode#3794]
+Condition : ((((((((isnotnull(l_commitdate#3791) AND isnotnull(l_receiptdate#3792)) AND isnotnull(l_shipdate#3790)) AND l_shipmode#3794 IN (MAIL,SHIP)) AND (l_commitdate#3791 < l_receiptdate#3792)) AND (l_shipdate#3790 < l_commitdate#3791)) AND (l_receiptdate#3792 >= 1994-01-01)) AND (l_receiptdate#3792 < 1995-01-01)) AND isnotnull(l_orderkey#3780))
+
+(6) Project
+Output [2]: [l_orderkey#3780, l_shipmode#3794]
+Input [5]: [l_orderkey#3780, l_shipdate#3790, l_commitdate#3791, l_receiptdate#3792, l_shipmode#3794]
+
+(7) BroadcastHashJoin
+Left keys [1]: [o_orderkey#3714]
+Right keys [1]: [l_orderkey#3780]
+Join type: Inner
+Join condition: None
+
+(8) Project
+Output [2]: [o_orderpriority#3719, l_shipmode#3794]
+Input [4]: [o_orderkey#3714, o_orderpriority#3719, l_orderkey#3780, l_shipmode#3794]
+
+(9) HashAggregate
+Input [2]: [o_orderpriority#3719, l_shipmode#3794]
+Keys [1]: [l_shipmode#3794]
+Functions [2]: [partial_sum(CASE WHEN ((o_orderpriority#3719 = 1-URGENT) OR (o_orderpriority#3719 = 2-HIGH)) THEN 1 ELSE 0 END), partial_sum(CASE WHEN (NOT (o_orderpriority#3719 = 1-URGENT) AND NOT (o_orderpriority#3719 = 2-HIGH)) THEN 1 ELSE 0 END)]
+Aggregate Attributes [2]: [sum#3854L, sum#3855L]
+Results [3]: [l_shipmode#3794, sum#3856L, sum#3857L]
+
+(10) Exchange
+Input [3]: [l_shipmode#3794, sum#3856L, sum#3857L]
+Arguments: hashpartitioning(l_shipmode#3794, 200), ENSURE_REQUIREMENTS, [plan_id=2943]
+
+(11) HashAggregate
+Input [3]: [l_shipmode#3794, sum#3856L, sum#3857L]
+Keys [1]: [l_shipmode#3794]
+Functions [2]: [sum(CASE WHEN ((o_orderpriority#3719 = 1-URGENT) OR (o_orderpriority#3719 = 2-HIGH)) THEN 1 ELSE 0 END), sum(CASE WHEN (NOT (o_orderpriority#3719 = 1-URGENT) AND NOT (o_orderpriority#3719 = 2-HIGH)) THEN 1 ELSE 0 END)]
+Aggregate Attributes [2]: [sum(CASE WHEN ((o_orderpriority#3719 = 1-URGENT) OR (o_orderpriority#3719 = 2-HIGH)) THEN 1 ELSE 0 END)#3849L, sum(CASE WHEN (NOT (o_orderpriority#3719 = 1-URGENT) AND NOT (o_orderpriority#3719 = 2-HIGH)) THEN 1 ELSE 0 END)#3850L]
+Results [3]: [l_shipmode#3794, sum(CASE WHEN ((o_orderpriority#3719 = 1-URGENT) OR (o_orderpriority#3719 = 2-HIGH)) THEN 1 ELSE 0 END)#3849L AS high_line_count#3847L, sum(CASE WHEN (NOT (o_orderpriority#3719 = 1-URGENT) AND NOT (o_orderpriority#3719 = 2-HIGH)) THEN 1 ELSE 0 END)#3850L AS low_line_count#3848L]
+
+(12) Exchange
+Input [3]: [l_shipmode#3794, high_line_count#3847L, low_line_count#3848L]
+Arguments: rangepartitioning(l_shipmode#3794 ASC NULLS FIRST, 200), ENSURE_REQUIREMENTS, [plan_id=2946]
+
+(13) Sort
+Input [3]: [l_shipmode#3794, high_line_count#3847L, low_line_count#3848L]
+Arguments: [l_shipmode#3794 ASC NULLS FIRST], true, 0
+
+(14) AdaptiveSparkPlan
+Output [3]: [l_shipmode#3794, high_line_count#3847L, low_line_count#3848L]
+Arguments: isFinalPlan=false

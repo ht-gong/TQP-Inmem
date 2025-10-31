@@ -1,0 +1,206 @@
+== Physical Plan ==
+AdaptiveSparkPlan (33)
++- TakeOrderedAndProject (32)
+   +- HashAggregate (31)
+      +- Exchange (30)
+         +- HashAggregate (29)
+            +- Project (28)
+               +- BroadcastHashJoin Inner BuildRight (27)
+                  :- Project (15)
+                  :  +- BroadcastHashJoin Inner BuildLeft (14)
+                  :     :- BroadcastExchange (3)
+                  :     :  +- Filter (2)
+                  :     :     +- Scan parquet  (1)
+                  :     +- BroadcastHashJoin LeftSemi BuildRight (13)
+                  :        :- Filter (5)
+                  :        :  +- Scan parquet  (4)
+                  :        +- BroadcastExchange (12)
+                  :           +- Project (11)
+                  :              +- Filter (10)
+                  :                 +- HashAggregate (9)
+                  :                    +- Exchange (8)
+                  :                       +- HashAggregate (7)
+                  :                          +- Scan parquet  (6)
+                  +- BroadcastExchange (26)
+                     +- BroadcastHashJoin LeftSemi BuildRight (25)
+                        :- Filter (17)
+                        :  +- Scan parquet  (16)
+                        +- BroadcastExchange (24)
+                           +- Project (23)
+                              +- Filter (22)
+                                 +- HashAggregate (21)
+                                    +- Exchange (20)
+                                       +- HashAggregate (19)
+                                          +- Scan parquet  (18)
+
+
+(1) Scan parquet 
+Output [2]: [c_custkey#1138, c_name#1139]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-customer]
+PushedFilters: [IsNotNull(c_custkey)]
+ReadSchema: struct<c_custkey:int,c_name:string>
+
+(2) Filter
+Input [2]: [c_custkey#1138, c_name#1139]
+Condition : isnotnull(c_custkey#1138)
+
+(3) BroadcastExchange
+Input [2]: [c_custkey#1138, c_name#1139]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=926]
+
+(4) Scan parquet 
+Output [4]: [o_orderkey#1181, o_custkey#1182, o_totalprice#1184, o_orderdate#1185]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-orders]
+PushedFilters: [IsNotNull(o_custkey), IsNotNull(o_orderkey)]
+ReadSchema: struct<o_orderkey:int,o_custkey:int,o_totalprice:double,o_orderdate:date>
+
+(5) Filter
+Input [4]: [o_orderkey#1181, o_custkey#1182, o_totalprice#1184, o_orderdate#1185]
+Condition : (isnotnull(o_custkey#1182) AND isnotnull(o_orderkey#1181))
+
+(6) Scan parquet 
+Output [2]: [l_orderkey#1317, l_quantity#1321]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-lineitem]
+ReadSchema: struct<l_orderkey:int,l_quantity:double>
+
+(7) HashAggregate
+Input [2]: [l_orderkey#1317, l_quantity#1321]
+Keys [1]: [l_orderkey#1317]
+Functions [1]: [partial_sum(l_quantity#1321)]
+Aggregate Attributes [1]: [sum#1343]
+Results [2]: [l_orderkey#1317, sum#1344]
+
+(8) Exchange
+Input [2]: [l_orderkey#1317, sum#1344]
+Arguments: hashpartitioning(l_orderkey#1317, 200), ENSURE_REQUIREMENTS, [plan_id=918]
+
+(9) HashAggregate
+Input [2]: [l_orderkey#1317, sum#1344]
+Keys [1]: [l_orderkey#1317]
+Functions [1]: [sum(l_quantity#1321)]
+Aggregate Attributes [1]: [sum(l_quantity#1321)#1315]
+Results [2]: [l_orderkey#1317, sum(l_quantity#1321)#1315 AS sum(l_quantity#1251)#1316]
+
+(10) Filter
+Input [2]: [l_orderkey#1317, sum(l_quantity#1251)#1316]
+Condition : (isnotnull(sum(l_quantity#1251)#1316) AND (sum(l_quantity#1251)#1316 > 300.0))
+
+(11) Project
+Output [1]: [l_orderkey#1317]
+Input [2]: [l_orderkey#1317, sum(l_quantity#1251)#1316]
+
+(12) BroadcastExchange
+Input [1]: [l_orderkey#1317]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=923]
+
+(13) BroadcastHashJoin
+Left keys [1]: [o_orderkey#1181]
+Right keys [1]: [l_orderkey#1317]
+Join type: LeftSemi
+Join condition: None
+
+(14) BroadcastHashJoin
+Left keys [1]: [c_custkey#1138]
+Right keys [1]: [o_custkey#1182]
+Join type: Inner
+Join condition: None
+
+(15) Project
+Output [5]: [c_custkey#1138, c_name#1139, o_orderkey#1181, o_totalprice#1184, o_orderdate#1185]
+Input [6]: [c_custkey#1138, c_name#1139, o_orderkey#1181, o_custkey#1182, o_totalprice#1184, o_orderdate#1185]
+
+(16) Scan parquet 
+Output [2]: [l_orderkey#1247, l_quantity#1251]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-lineitem]
+PushedFilters: [IsNotNull(l_orderkey)]
+ReadSchema: struct<l_orderkey:int,l_quantity:double>
+
+(17) Filter
+Input [2]: [l_orderkey#1247, l_quantity#1251]
+Condition : isnotnull(l_orderkey#1247)
+
+(18) Scan parquet 
+Output [2]: [l_orderkey#1317, l_quantity#1321]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-lineitem]
+ReadSchema: struct<l_orderkey:int,l_quantity:double>
+
+(19) HashAggregate
+Input [2]: [l_orderkey#1317, l_quantity#1321]
+Keys [1]: [l_orderkey#1317]
+Functions [1]: [partial_sum(l_quantity#1321)]
+Aggregate Attributes [1]: [sum#1343]
+Results [2]: [l_orderkey#1317, sum#1344]
+
+(20) Exchange
+Input [2]: [l_orderkey#1317, sum#1344]
+Arguments: hashpartitioning(l_orderkey#1317, 200), ENSURE_REQUIREMENTS, [plan_id=929]
+
+(21) HashAggregate
+Input [2]: [l_orderkey#1317, sum#1344]
+Keys [1]: [l_orderkey#1317]
+Functions [1]: [sum(l_quantity#1321)]
+Aggregate Attributes [1]: [sum(l_quantity#1321)#1315]
+Results [2]: [l_orderkey#1317, sum(l_quantity#1321)#1315 AS sum(l_quantity#1251)#1316]
+
+(22) Filter
+Input [2]: [l_orderkey#1317, sum(l_quantity#1251)#1316]
+Condition : (isnotnull(sum(l_quantity#1251)#1316) AND (sum(l_quantity#1251)#1316 > 300.0))
+
+(23) Project
+Output [1]: [l_orderkey#1317]
+Input [2]: [l_orderkey#1317, sum(l_quantity#1251)#1316]
+
+(24) BroadcastExchange
+Input [1]: [l_orderkey#1317]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=934]
+
+(25) BroadcastHashJoin
+Left keys [1]: [l_orderkey#1247]
+Right keys [1]: [l_orderkey#1317]
+Join type: LeftSemi
+Join condition: None
+
+(26) BroadcastExchange
+Input [2]: [l_orderkey#1247, l_quantity#1251]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=937]
+
+(27) BroadcastHashJoin
+Left keys [1]: [o_orderkey#1181]
+Right keys [1]: [l_orderkey#1247]
+Join type: Inner
+Join condition: None
+
+(28) Project
+Output [6]: [c_custkey#1138, c_name#1139, o_orderkey#1181, o_totalprice#1184, o_orderdate#1185, l_quantity#1251]
+Input [7]: [c_custkey#1138, c_name#1139, o_orderkey#1181, o_totalprice#1184, o_orderdate#1185, l_orderkey#1247, l_quantity#1251]
+
+(29) HashAggregate
+Input [6]: [c_custkey#1138, c_name#1139, o_orderkey#1181, o_totalprice#1184, o_orderdate#1185, l_quantity#1251]
+Keys [5]: [c_name#1139, c_custkey#1138, o_orderkey#1181, o_orderdate#1185, knownfloatingpointnormalized(normalizenanandzero(o_totalprice#1184)) AS o_totalprice#1184]
+Functions [1]: [partial_sum(l_quantity#1251)]
+Aggregate Attributes [1]: [sum#1341]
+Results [6]: [c_name#1139, c_custkey#1138, o_orderkey#1181, o_orderdate#1185, o_totalprice#1184, sum#1342]
+
+(30) Exchange
+Input [6]: [c_name#1139, c_custkey#1138, o_orderkey#1181, o_orderdate#1185, o_totalprice#1184, sum#1342]
+Arguments: hashpartitioning(c_name#1139, c_custkey#1138, o_orderkey#1181, o_orderdate#1185, o_totalprice#1184, 200), ENSURE_REQUIREMENTS, [plan_id=942]
+
+(31) HashAggregate
+Input [6]: [c_name#1139, c_custkey#1138, o_orderkey#1181, o_orderdate#1185, o_totalprice#1184, sum#1342]
+Keys [5]: [c_name#1139, c_custkey#1138, o_orderkey#1181, o_orderdate#1185, o_totalprice#1184]
+Functions [1]: [sum(l_quantity#1251)]
+Aggregate Attributes [1]: [sum(l_quantity#1251)#1333]
+Results [6]: [c_name#1139, c_custkey#1138, o_orderkey#1181, o_orderdate#1185, o_totalprice#1184, sum(l_quantity#1251)#1333 AS sum(l_quantity)#1334]
+
+(32) TakeOrderedAndProject
+Input [6]: [c_name#1139, c_custkey#1138, o_orderkey#1181, o_orderdate#1185, o_totalprice#1184, sum(l_quantity)#1334]
+Arguments: 100, [o_totalprice#1184 DESC NULLS LAST, o_orderdate#1185 ASC NULLS FIRST], [c_name#1139, c_custkey#1138, o_orderkey#1181, o_orderdate#1185, o_totalprice#1184, sum(l_quantity)#1334]
+
+(33) AdaptiveSparkPlan
+Output [6]: [c_name#1139, c_custkey#1138, o_orderkey#1181, o_orderdate#1185, o_totalprice#1184, sum(l_quantity)#1334]
+Arguments: isFinalPlan=false

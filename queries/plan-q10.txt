@@ -1,0 +1,146 @@
+== Physical Plan ==
+AdaptiveSparkPlan (24)
++- TakeOrderedAndProject (23)
+   +- HashAggregate (22)
+      +- Exchange (21)
+         +- HashAggregate (20)
+            +- Project (19)
+               +- BroadcastHashJoin Inner BuildRight (18)
+                  :- Project (14)
+                  :  +- BroadcastHashJoin Inner BuildRight (13)
+                  :     :- Project (8)
+                  :     :  +- BroadcastHashJoin Inner BuildRight (7)
+                  :     :     :- Filter (2)
+                  :     :     :  +- Scan parquet  (1)
+                  :     :     +- BroadcastExchange (6)
+                  :     :        +- Project (5)
+                  :     :           +- Filter (4)
+                  :     :              +- Scan parquet  (3)
+                  :     +- BroadcastExchange (12)
+                  :        +- Project (11)
+                  :           +- Filter (10)
+                  :              +- Scan parquet  (9)
+                  +- BroadcastExchange (17)
+                     +- Filter (16)
+                        +- Scan parquet  (15)
+
+
+(1) Scan parquet 
+Output [7]: [c_custkey#3021, c_name#3022, c_address#3023, c_nationkey#3024, c_phone#3025, c_acctbal#3026, c_comment#3028]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-customer]
+PushedFilters: [IsNotNull(c_custkey), IsNotNull(c_nationkey)]
+ReadSchema: struct<c_custkey:int,c_name:string,c_address:string,c_nationkey:int,c_phone:string,c_acctbal:double,c_comment:string>
+
+(2) Filter
+Input [7]: [c_custkey#3021, c_name#3022, c_address#3023, c_nationkey#3024, c_phone#3025, c_acctbal#3026, c_comment#3028]
+Condition : (isnotnull(c_custkey#3021) AND isnotnull(c_nationkey#3024))
+
+(3) Scan parquet 
+Output [3]: [o_orderkey#3064, o_custkey#3065, o_orderdate#3068]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-orders]
+PushedFilters: [IsNotNull(o_orderdate), GreaterThanOrEqual(o_orderdate,1993-10-01), LessThan(o_orderdate,1994-01-01), IsNotNull(o_custkey), IsNotNull(o_orderkey)]
+ReadSchema: struct<o_orderkey:int,o_custkey:int,o_orderdate:date>
+
+(4) Filter
+Input [3]: [o_orderkey#3064, o_custkey#3065, o_orderdate#3068]
+Condition : ((((isnotnull(o_orderdate#3068) AND (o_orderdate#3068 >= 1993-10-01)) AND (o_orderdate#3068 < 1994-01-01)) AND isnotnull(o_custkey#3065)) AND isnotnull(o_orderkey#3064))
+
+(5) Project
+Output [2]: [o_orderkey#3064, o_custkey#3065]
+Input [3]: [o_orderkey#3064, o_custkey#3065, o_orderdate#3068]
+
+(6) BroadcastExchange
+Input [2]: [o_orderkey#3064, o_custkey#3065]
+Arguments: HashedRelationBroadcastMode(List(cast(input[1, int, true] as bigint)),false), [plan_id=2464]
+
+(7) BroadcastHashJoin
+Left keys [1]: [c_custkey#3021]
+Right keys [1]: [o_custkey#3065]
+Join type: Inner
+Join condition: None
+
+(8) Project
+Output [8]: [c_custkey#3021, c_name#3022, c_address#3023, c_nationkey#3024, c_phone#3025, c_acctbal#3026, c_comment#3028, o_orderkey#3064]
+Input [9]: [c_custkey#3021, c_name#3022, c_address#3023, c_nationkey#3024, c_phone#3025, c_acctbal#3026, c_comment#3028, o_orderkey#3064, o_custkey#3065]
+
+(9) Scan parquet 
+Output [4]: [l_orderkey#3130, l_extendedprice#3135, l_discount#3136, l_returnflag#3138]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-lineitem]
+PushedFilters: [IsNotNull(l_returnflag), EqualTo(l_returnflag,R), IsNotNull(l_orderkey)]
+ReadSchema: struct<l_orderkey:int,l_extendedprice:double,l_discount:double,l_returnflag:string>
+
+(10) Filter
+Input [4]: [l_orderkey#3130, l_extendedprice#3135, l_discount#3136, l_returnflag#3138]
+Condition : ((isnotnull(l_returnflag#3138) AND (l_returnflag#3138 = R)) AND isnotnull(l_orderkey#3130))
+
+(11) Project
+Output [3]: [l_orderkey#3130, l_extendedprice#3135, l_discount#3136]
+Input [4]: [l_orderkey#3130, l_extendedprice#3135, l_discount#3136, l_returnflag#3138]
+
+(12) BroadcastExchange
+Input [3]: [l_orderkey#3130, l_extendedprice#3135, l_discount#3136]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=2468]
+
+(13) BroadcastHashJoin
+Left keys [1]: [o_orderkey#3064]
+Right keys [1]: [l_orderkey#3130]
+Join type: Inner
+Join condition: None
+
+(14) Project
+Output [9]: [c_custkey#3021, c_name#3022, c_address#3023, c_nationkey#3024, c_phone#3025, c_acctbal#3026, c_comment#3028, l_extendedprice#3135, l_discount#3136]
+Input [11]: [c_custkey#3021, c_name#3022, c_address#3023, c_nationkey#3024, c_phone#3025, c_acctbal#3026, c_comment#3028, o_orderkey#3064, l_orderkey#3130, l_extendedprice#3135, l_discount#3136]
+
+(15) Scan parquet 
+Output [2]: [n_nationkey#3174, n_name#3175]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-nation]
+PushedFilters: [IsNotNull(n_nationkey)]
+ReadSchema: struct<n_nationkey:int,n_name:string>
+
+(16) Filter
+Input [2]: [n_nationkey#3174, n_name#3175]
+Condition : isnotnull(n_nationkey#3174)
+
+(17) BroadcastExchange
+Input [2]: [n_nationkey#3174, n_name#3175]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=2472]
+
+(18) BroadcastHashJoin
+Left keys [1]: [c_nationkey#3024]
+Right keys [1]: [n_nationkey#3174]
+Join type: Inner
+Join condition: None
+
+(19) Project
+Output [9]: [c_custkey#3021, c_name#3022, c_address#3023, c_phone#3025, c_acctbal#3026, c_comment#3028, l_extendedprice#3135, l_discount#3136, n_name#3175]
+Input [11]: [c_custkey#3021, c_name#3022, c_address#3023, c_nationkey#3024, c_phone#3025, c_acctbal#3026, c_comment#3028, l_extendedprice#3135, l_discount#3136, n_nationkey#3174, n_name#3175]
+
+(20) HashAggregate
+Input [9]: [c_custkey#3021, c_name#3022, c_address#3023, c_phone#3025, c_acctbal#3026, c_comment#3028, l_extendedprice#3135, l_discount#3136, n_name#3175]
+Keys [7]: [c_custkey#3021, c_name#3022, knownfloatingpointnormalized(normalizenanandzero(c_acctbal#3026)) AS c_acctbal#3026, c_phone#3025, n_name#3175, c_address#3023, c_comment#3028]
+Functions [1]: [partial_sum((l_extendedprice#3135 * (1.0 - l_discount#3136)))]
+Aggregate Attributes [1]: [sum#3207]
+Results [8]: [c_custkey#3021, c_name#3022, c_acctbal#3026, c_phone#3025, n_name#3175, c_address#3023, c_comment#3028, sum#3208]
+
+(21) Exchange
+Input [8]: [c_custkey#3021, c_name#3022, c_acctbal#3026, c_phone#3025, n_name#3175, c_address#3023, c_comment#3028, sum#3208]
+Arguments: hashpartitioning(c_custkey#3021, c_name#3022, c_acctbal#3026, c_phone#3025, n_name#3175, c_address#3023, c_comment#3028, 200), ENSURE_REQUIREMENTS, [plan_id=2477]
+
+(22) HashAggregate
+Input [8]: [c_custkey#3021, c_name#3022, c_acctbal#3026, c_phone#3025, n_name#3175, c_address#3023, c_comment#3028, sum#3208]
+Keys [7]: [c_custkey#3021, c_name#3022, c_acctbal#3026, c_phone#3025, n_name#3175, c_address#3023, c_comment#3028]
+Functions [1]: [sum((l_extendedprice#3135 * (1.0 - l_discount#3136)))]
+Aggregate Attributes [1]: [sum((l_extendedprice#3135 * (1.0 - l_discount#3136)))#3198]
+Results [8]: [c_custkey#3021, c_name#3022, sum((l_extendedprice#3135 * (1.0 - l_discount#3136)))#3198 AS revenue#3197, c_acctbal#3026, n_name#3175, c_address#3023, c_phone#3025, c_comment#3028]
+
+(23) TakeOrderedAndProject
+Input [8]: [c_custkey#3021, c_name#3022, revenue#3197, c_acctbal#3026, n_name#3175, c_address#3023, c_phone#3025, c_comment#3028]
+Arguments: 20, [revenue#3197 DESC NULLS LAST], [c_custkey#3021, c_name#3022, revenue#3197, c_acctbal#3026, n_name#3175, c_address#3023, c_phone#3025, c_comment#3028]
+
+(24) AdaptiveSparkPlan
+Output [8]: [c_custkey#3021, c_name#3022, revenue#3197, c_acctbal#3026, n_name#3175, c_address#3023, c_phone#3025, c_comment#3028]
+Arguments: isFinalPlan=false

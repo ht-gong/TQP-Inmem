@@ -1,0 +1,91 @@
+== Physical Plan ==
+AdaptiveSparkPlan (15)
++- Sort (14)
+   +- Exchange (13)
+      +- HashAggregate (12)
+         +- Exchange (11)
+            +- HashAggregate (10)
+               +- Project (9)
+                  +- BroadcastHashJoin LeftSemi BuildRight (8)
+                     :- Project (3)
+                     :  +- Filter (2)
+                     :     +- Scan parquet  (1)
+                     +- BroadcastExchange (7)
+                        +- Project (6)
+                           +- Filter (5)
+                              +- Scan parquet  (4)
+
+
+(1) Scan parquet 
+Output [3]: [o_orderkey#1175, o_orderdate#1179, o_orderpriority#1180]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-orders]
+PushedFilters: [IsNotNull(o_orderdate), GreaterThanOrEqual(o_orderdate,1993-07-01), LessThan(o_orderdate,1993-10-01)]
+ReadSchema: struct<o_orderkey:int,o_orderdate:date,o_orderpriority:string>
+
+(2) Filter
+Input [3]: [o_orderkey#1175, o_orderdate#1179, o_orderpriority#1180]
+Condition : ((isnotnull(o_orderdate#1179) AND (o_orderdate#1179 >= 1993-07-01)) AND (o_orderdate#1179 < 1993-10-01))
+
+(3) Project
+Output [2]: [o_orderkey#1175, o_orderpriority#1180]
+Input [3]: [o_orderkey#1175, o_orderdate#1179, o_orderpriority#1180]
+
+(4) Scan parquet 
+Output [3]: [l_orderkey#1241, l_commitdate#1252, l_receiptdate#1253]
+Batched: true
+Location: InMemoryFileIndex [file:/data2/home/zhaoyah/Code/TQP-Vortex/tmp/tmpfile-lineitem]
+PushedFilters: [IsNotNull(l_commitdate), IsNotNull(l_receiptdate)]
+ReadSchema: struct<l_orderkey:int,l_commitdate:date,l_receiptdate:date>
+
+(5) Filter
+Input [3]: [l_orderkey#1241, l_commitdate#1252, l_receiptdate#1253]
+Condition : ((isnotnull(l_commitdate#1252) AND isnotnull(l_receiptdate#1253)) AND (l_commitdate#1252 < l_receiptdate#1253))
+
+(6) Project
+Output [1]: [l_orderkey#1241]
+Input [3]: [l_orderkey#1241, l_commitdate#1252, l_receiptdate#1253]
+
+(7) BroadcastExchange
+Input [1]: [l_orderkey#1241]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=910]
+
+(8) BroadcastHashJoin
+Left keys [1]: [o_orderkey#1175]
+Right keys [1]: [l_orderkey#1241]
+Join type: LeftSemi
+Join condition: None
+
+(9) Project
+Output [1]: [o_orderpriority#1180]
+Input [2]: [o_orderkey#1175, o_orderpriority#1180]
+
+(10) HashAggregate
+Input [1]: [o_orderpriority#1180]
+Keys [1]: [o_orderpriority#1180]
+Functions [1]: [partial_count(1)]
+Aggregate Attributes [1]: [count#1313L]
+Results [2]: [o_orderpriority#1180, count#1314L]
+
+(11) Exchange
+Input [2]: [o_orderpriority#1180, count#1314L]
+Arguments: hashpartitioning(o_orderpriority#1180, 200), ENSURE_REQUIREMENTS, [plan_id=915]
+
+(12) HashAggregate
+Input [2]: [o_orderpriority#1180, count#1314L]
+Keys [1]: [o_orderpriority#1180]
+Functions [1]: [count(1)]
+Aggregate Attributes [1]: [count(1)#1310L]
+Results [2]: [o_orderpriority#1180, count(1)#1310L AS order_count#1308L]
+
+(13) Exchange
+Input [2]: [o_orderpriority#1180, order_count#1308L]
+Arguments: rangepartitioning(o_orderpriority#1180 ASC NULLS FIRST, 200), ENSURE_REQUIREMENTS, [plan_id=918]
+
+(14) Sort
+Input [2]: [o_orderpriority#1180, order_count#1308L]
+Arguments: [o_orderpriority#1180 ASC NULLS FIRST], true, 0
+
+(15) AdaptiveSparkPlan
+Output [2]: [o_orderpriority#1180, order_count#1308L]
+Arguments: isFinalPlan=false
