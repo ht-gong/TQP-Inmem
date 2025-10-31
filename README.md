@@ -128,4 +128,4 @@ We obtain following numbers:
 |  18 |         0.078482 |
 
 
-One note is that we calculate the runtim numbers by subtracting the total runtime by the result output time (writing to screen/file) and the substracting the scan time (scanning disk to GPU).
+One note is that we calculate the runtime numbers by subtracting the total runtime by the result output time (writing to screen/file) and then substracting the scan time (scanning from disk -> GPU).
