@@ -1,4 +1,4 @@
-# TQP-Vortex
+# TQP-Inmem
 This is an re-implementation of the Microsoft Tensor Query Processing platform, and a fork of the on-going project to make TQP support out-of-GPU memory queries.
 
 A large part of the original code volume is for out-of-memory processing. This fork removes the out-of-memory processing part to support only in-memory workloads as an experimental baseline.
@@ -34,7 +34,7 @@ pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu12
 
 ### TPCH-DBGEN with Tensors
 
-We wrote torch-native dbgen linked here: https://github.com/hfhongzy/tpch-dbgen-tensors/tree/main
+We wrote a torch-native dbgen for generating TPC-H data linked here: https://github.com/hfhongzy/tpch-dbgen-tensors/tree/main
 
 Clone the repo and use the following instructions to configure the tpch-dbgen repo under its root directory.
 
@@ -49,7 +49,7 @@ Substitute the -s flag with dbgen with the desired scale factor to generate the 
 The tensors will be generated under ./data from the tpch-dbgen repo home directory
 
 ### Make TQP Custom Modules
-From the TQP-Vortex home directory, run
+From the TQP-Inmem home directory, run
 
 ```
 cmake -S . -B build/ -DCUDA_TOOLKIT_ROOT_DIR=$CONDA_PREFIX/targets/x86_64-linux
@@ -60,13 +60,13 @@ pip intall -r requirements.txt
 (HIP / Nvidia envs should be automatically detected)
 
 ## Running the System
-First, modify ``config.json`` to point to ``${dbgen_root_dir/data}`` 
+First, modify ``config.json`` to point to ``/path/to/tpch-dbgen-tensors/data`` 
 
 e.g. in config.json:
 ```
-"tensors path": ${dbgen_root_dir/data}
+"tensors path": "/path/to/tpch-dbgen-tensors/data"
 ```
-*Need to substitute dbgen_root_dir with the directory where dbgen is cloned at.*
+*Need to substitute /path/to/tpch-dbgen-tensors/ with the directory where dbgen is cloned at.*
 
 The system is runnable via 
 
