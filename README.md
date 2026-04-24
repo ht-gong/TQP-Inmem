@@ -25,7 +25,7 @@ TQP-Inmem
 
 See [`Setup.md`](./Setup.md) for the conda environment, TPC-H data generation, and Python dependency steps.
 
-Follow-up work and known rough edges are tracked in [`Tasks.md`](./Tasks.md).
+Possible follow-up work are tracked in [`Tasks.md`](./Tasks.md).
 
 ## Running the System
 
