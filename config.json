@@ -1,5 +1,4 @@
 {
   "tables path": "",
-  "tensors path": "/home/jovyan/workspace/tpch-dbgen-tensors/data/",
-  "vortex_build_path": "./build"
+  "tensors path": "/root/container-files/tqp/data/"
 }

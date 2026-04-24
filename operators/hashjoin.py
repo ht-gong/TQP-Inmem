@@ -1,13 +1,11 @@
 from typing import List, Literal
 from torch import Tensor, device
 
-from IO.vortex_pipeline import InMemoryPipeline, rearrange_pipeline, ColumnMetaData
-from parsing import get_literals
+from IO.vortex_pipeline import InMemoryPipeline
 from conversion import index_with_null
 from operators.filter import evaluate
 from utility.logger import perf_logger, message_logger
 from variable import Variable
-import IO.vortex as vortex
 import torch
 import constants
 
@@ -23,30 +21,6 @@ def evaluate_join(device_name, tensorsa, tensorsb, tree, leftidx, rightidx):
         
     return evaluate(device_name, None, tree, leftidx.size(0), None, leaf)
   
-def cat_and_extract(columns, indexes):
-    assert len(indexes) > 0
-    res = torch.tensor([], device='cuda:0', dtype=columns[indexes[0]].tensor.dtype)
-    for i in indexes:
-        res = torch.cat((res, columns[i].tensor))
-        columns[i] = None 
-    return Variable(res, '') # Return Variable just to satisfy input/output types, non-persistent intermediate
-
-def split_view_with_numel(input_column: ColumnMetaData, chunk_numel: int):
-    numel = input_column.tensor.shape[0]
-    sorted_split_view = []
-    for i in range((numel + chunk_numel - 1) // chunk_numel):
-        sorted_split_view.append(Variable(input_column.tensor[i * chunk_numel:min((i + 1) * chunk_numel, numel)],
-                            '', None, input_column.placement))  # backing mem_ptr stored with sorted_result
-    return sorted_split_view
-
-def split_view_with_numel(input_column: ColumnMetaData, chunk_numel: int):
-    numel = input_column.tensor.shape[0]
-    sorted_split_view = []
-    for i in range((numel + chunk_numel - 1) // chunk_numel):
-        sorted_split_view.append(Variable(input_column.tensor[i * chunk_numel:min((i + 1) * chunk_numel, numel)],
-                            '', None, input_column.placement))  # backing mem_ptr stored with sorted_result
-    return sorted_split_view
-
 def join_kernel_new(gpu_enable, tensors_left, tensors_right, left_key, right_key, condition_list, join_output_keys,
                 return_global_index, type: Literal['inner', 'right-semi', 'right-anti', 'right-outer'], 
                 left_global_idx, right_global_idx):

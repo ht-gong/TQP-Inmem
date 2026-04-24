@@ -18,10 +18,7 @@ from operators.sort import tqp_sort
 from operators.output import tqp_output
 from operators.hashjoin import join_vortex
 from utility.logger import datasize_logger, torch_profiler, perf_logger, message_logger, set_torch_profiler, set_datasize_logger, set_perf_logger, set_message_logger
-from IO.vortex import set_exchange_to_naive
 from IO.pinned_mem import PinnedMemory, GPUMemory
-from torch.cuda.memory import CUDAPluggableAllocator, change_current_allocator
-import TQPlib.tqpmemory as cmp
 
 subquery_result = None
 gpu_enable          = True
@@ -314,15 +311,6 @@ if __name__ == "__main__":
     print(torch.__version__)
     print(torch.version.cuda)
 
-    alloc = CUDAPluggableAllocator(
-        path_to_so_file="libcustom_allocator.so",
-        alloc_fn_name="pa_cuda_malloc",
-        free_fn_name="pa_cuda_free",
-    )
-    change_current_allocator(alloc)  # must be called before any CUDA tensors exist
-
-    cmp.init(78*1024**3, 78*1024**3 // 10000)    
-
     parser = argparse.ArgumentParser()
     parser.add_argument('--SF', type=int, default=1, help='Scale Factor')
     parser.add_argument('--q', type=int, nargs='+', default=list(range(1, 23)), help='List of Query IDs')
@@ -338,7 +326,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     set_message_logger(args.log, False)
-    set_exchange_to_naive()
 
     if args.test:
         import pathlib
